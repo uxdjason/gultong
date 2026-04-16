@@ -1,0 +1,18 @@
+# 1. 특정 파일 무시 (API 키, 환경변수 파일 등)
+.env
+secret_key.json
+config.js
+
+# 2. 특정 폴더 전체 무시 (패키지 모듈, 빌드 결과물 등)
+reference/
+
+# 3. 특정 확장자를 가진 모든 파일 무시
+*.log
+.DS_Store
+
+# 4. 특정 폴더 안의 특정 확장자만 무시
+/temp/*.txt
+
+# 5. 무시 규칙에서 예외 두기 (모든 log를 무시하되, error.log는 예외로 추적)
+*.log
+!error.log
