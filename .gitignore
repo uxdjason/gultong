@@ -16,3 +16,15 @@ reference/
 # 5. 무시 규칙에서 예외 두기 (모든 log를 무시하되, error.log는 예외로 추적)
 *.log
 !error.log
+
+# Next.js & Node.js 관련 추가 무시 사항
+node_modules/
+.next/
+out/
+build/
+.vercel
+next-env.d.ts
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
