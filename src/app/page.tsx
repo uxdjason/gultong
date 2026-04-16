@@ -7,8 +7,9 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="gnb" style={{ position: 'sticky', top: 0, zIndex: 50, backgroundColor: 'rgba(249, 251, 255, 0.9)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(229, 231, 235, 0.5)' }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '64px' }}>
-          <div className="logo" style={{ fontWeight: 800, fontSize: '24px', color: 'var(--primary-color)' }}>
-            글통.<span style={{ color: '#000' }}></span>
+          <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, fontSize: '24px', color: '#111827' }}>
+            <img src="/images/gultong_logo_260416.svg" alt="글통 로고" style={{ width: '32px', height: '32px', borderRadius: '8px' }} />
+            <span>글통<span style={{ color: 'var(--primary-color)' }}>.</span></span>
           </div>
           <div className="gnb-menu" style={{ display: 'flex', gap: '40px' }}>
             <a href="#features" style={{color: '#4b5563', fontWeight: 600, fontSize: '15px'}}>핵심 기능</a>
@@ -295,7 +296,10 @@ export default function LandingPage() {
       <footer style={{ backgroundColor: '#ffffff', borderTop: '1px solid #e5e7eb', padding: '60px 0 40px' }}>
           <div className="container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '40px' }}>
             <div>
-              <div className="logo" style={{ marginBottom: '16px', fontSize: '20px', fontWeight: 800, color: '#111827' }}>글통.</div>
+              <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '20px', fontWeight: 800, color: '#111827' }}>
+                <img src="/images/gultong_logo_260416.svg" alt="글통 로고" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />
+                <span>글통<span style={{ color: 'var(--primary-color)' }}>.</span></span>
+              </div>
               <p className="text-muted" style={{ fontSize: '13px', lineHeight: '1.8' }}>
                 사업자명: 글통 주식회사 | 대표자: 홍길동<br/>
                 사업자등록번호: 123-45-67890<br/>

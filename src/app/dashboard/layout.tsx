@@ -14,7 +14,10 @@ export default function DashboardLayout({
     <div style={{ backgroundColor: '#f9fafb', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <nav className="gnb" style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--surface-color)', height: '64px', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-          <Link href="/" className="logo" style={{ color: 'var(--primary-color)', fontSize: '22px', fontWeight: 800, textDecoration: 'none' }}>글통.</Link>
+          <Link href="/" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '22px', fontWeight: 800, textDecoration: 'none', color: '#111827' }}>
+            <img src="/images/gultong_logo_260416.svg" alt="글통 로고" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
+            <span>글통<span style={{ color: 'var(--primary-color)' }}>.</span></span>
+          </Link>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
