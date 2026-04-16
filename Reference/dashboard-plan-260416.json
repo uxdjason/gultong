@@ -1,0 +1,69 @@
+{
+  "service_name": "Gultong (글통)",
+  "dashboard_layout": {
+    "top_navigation": {
+      "mode_switch": ["단일 텍스트 변환", "대량 일괄 변환(Bulk)"],
+      "user_status": "구독 상태(Free/Pro) 및 잔여 사용량 표시",
+      "settings": "내 문체 관리 (기존 작성 글을 업로드하여 고유 문체 학습)"
+    },
+    "left_panel_input": {
+      "input_area": "단일 텍스트 입력창 또는 대량 변환용 파일 업로드 영역",
+      "basic_options": {
+        "writing_mode": "글쓰기 모드 (블로그, 비즈니스 등 드롭다운)",
+        "honorifics": "존댓말 옵션 (사용 안 함, ~해요, ~니다, 혼합 드롭다운)",
+        "tone_sliders": "진지함 및 감성 레벨 조절 슬라이더"
+      },
+      "premium_options": {
+        "persona_cloning": "내 문체 적용하기 (사전 학습된 개인 문체 선택 드롭다운, 무료 회원은 잠금)"
+      },
+      "cta_button": "SEO 안전 휴머나이징 시작 버튼"
+    },
+    "right_panel_output": {
+      "result_editor": "변환된 결과물을 즉시 수정할 수 있는 텍스트 에디터",
+      "analytics_board": {
+        "score_comparison": "AI 탐지 점수 전/후 비교 시각화 지표",
+        "analysis_badges": "적용된 구조적 변화 및 인간적인 글쓰기 특성을 보여주는 분석 배지"
+      },
+      "history_stack": "이전 변환 결과물들을 아래로 스크롤하며 비교할 수 있는 히스토리 스택"
+    }
+  },
+  "core_features": [
+    {
+      "name": "SEO 안전 휴머나이저",
+      "description": "검색 엔진의 AI 탐지를 회피하기 위해 기계적인 나열식 패턴을 파괴하고 문단을 유기적으로 융합합니다."
+    },
+    {
+      "name": "내 문체 복제 (Persona Cloning)",
+      "description": "사용자 고유의 어휘, 띄어쓰기 습관, 문장 호흡을 학습하여 결과물에 그대로 반영합니다."
+    },
+    {
+      "name": "대량 일괄 처리 (Bulk Process)",
+      "description": "다량의 원고 파일을 한 번에 업로드하여 동시에 변환하고 압축 파일로 일괄 다운로드합니다."
+    }
+  ],
+  "pricing_plans": {
+    "free": {
+      "price_krw": 0,
+      "features": [
+        "단일 텍스트 변환 모드만 지원",
+        "1회 변환 시 최대 1,000자 제한",
+        "일일 최대 3회 사용 가능",
+        "기본 휴머나이저 옵션 제공"
+      ],
+      "locked_features": [
+        "내 문체 복제 기능",
+        "대량 일괄 처리 기능"
+      ]
+    },
+    "pro": {
+      "price_krw": 10000,
+      "billing_cycle": "월간",
+      "features": [
+        "글자 수 및 일일 사용 횟수 무제한",
+        "내 문체 복제 기능 무제한 사용",
+        "대량 일괄 처리 기능 무제한 사용",
+        "서버 우선 처리 지원"
+      ]
+    }
+  }
+}
