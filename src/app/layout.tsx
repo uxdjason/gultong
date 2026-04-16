@@ -14,22 +14,6 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <nav className="gnb">
-          <div className="container gnb-container">
-            <div className="logo">
-              글통.
-            </div>
-            <div className="gnb-menu">
-              <a href="#features" className="text-muted" style={{fontWeight: 500}}>핵심 기능</a>
-              <a href="#pricing" className="text-muted" style={{fontWeight: 500}}>요금 안내</a>
-              <a href="#use-case" className="text-muted" style={{fontWeight: 500}}>적용 사례 (블로그)</a>
-            </div>
-            <div className="gnb-actions">
-              <span className="text-muted" style={{ fontSize: '14px', cursor: 'pointer', fontWeight: 500 }}>로그인</span>
-              <button className="btn-primary" style={{ fontSize: '14px', padding: '10px 16px' }}>무료로 시작하기</button>
-            </div>
-          </div>
-        </nav>
         {children}
       </body>
     </html>
