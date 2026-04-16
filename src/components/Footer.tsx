@@ -22,7 +22,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="container text-muted" style={{ fontSize: '14px', borderTop: '1px solid #e5e7eb', paddingTop: '24px', margin: '40px auto 0 auto' }}>
-        © 2026 Gultong. All rights reserved.
+        © 2026 Gultong 글통. All rights reserved.
       </div>
     </footer>
   );

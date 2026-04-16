@@ -128,7 +128,7 @@ export default function LandingPage() {
               <div className="icon-box icon-box-lg icon-purple">🎭</div>
               <h3 className="font-bold-28 m-b-16">내 문체 복제 (Persona Cloning)</h3>
               <p className="text-purple font-bold-18 m-b-20">"나보다 더 나처럼 쓰는 AI"</p>
-              <p className="text-muted p-18">과거에 직접 작성한 원고를 학습시킵니다. 평소의 띄어쓰기 습관, 자주 쓰는 어휘, 특유의 문장 호흡을 그대로 결과물에 입혀냅니다.</p>
+              <p className="text-muted p-18">과거에 직접 작성한 원고를 학습시킵니다. 평소의 띄어쓰기 습관, 자주 쓰는 어휘, 특유의 문장 호흡을 그대로 결과물에 녹여냅니다.</p>
             </div>
             <div className="card" style={{ backgroundColor: '#faf5ff', padding: '40px', minHeight: '350px', order: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ width: '100%' }}>
@@ -175,7 +175,7 @@ export default function LandingPage() {
             <div>
               <div className="icon-box icon-box-lg icon-teal">📦</div>
               <h3 className="font-bold-28 m-b-16">대량 일괄 처리 (Bulk Process)</h3>
-              <p className="text-teal font-bold-18 m-b-20">"수십 개의 마케팅 원고도 원클릭으로"</p>
+              <p className="text-teal font-bold-18 m-b-20">"수십 개의 마케팅 원고도 그냥 원클릭으로"</p>
               <p className="text-muted p-18">여러 개의 텍스트 파일이나 CSV를 한 번에 업로드하세요. 실무자들의 퇴근 시간을 획기적으로 앞당겨 드립니다.</p>
             </div>
           </div>
@@ -194,12 +194,12 @@ export default function LandingPage() {
             <div className="bg-dark">
               <div className="icon-box icon-box-lg icon-light-blue">🛡️</div>
               <h3 className="font-bold-24 m-b-16 text-white">탐지기가 내장된 적대적 생성</h3>
-              <p className="p-18" style={{ color: '#94a3b8' }}>내부의 강력한 10단계 AI 탐지 엔진을 100% 통과할 때까지 스스로 글을 재건축합니다. 단순 회피가 아닌, 구조적 완벽함을 추구합니다.</p>
+              <p className="p-18" style={{ color: '#94a3b8' }}>강력한 내장 AI 탐지 엔진을 사용하여 통과 가능한 글이 나올 때까지 스스로 글을 재작성합니다.</p>
             </div>
             <div className="bg-dark">
               <div className="icon-box icon-box-lg icon-light-purple">🇰🇷</div>
               <h3 className="font-bold-24 m-b-16 text-white">한국어 뉘앙스 특화</h3>
-              <p className="p-18" style={{ color: '#94a3b8' }}>한국어 특유의 자연스러운 조사 생략, 구어체 혼용, 지식인 글쓰기 패턴(한자어 병기)을 정밀하게 구현합니다.</p>
+              <p className="p-18" style={{ color: '#94a3b8' }}>한국어 특유의 자연스러운 조사 생략, 구어체 혼용 및 학문적 글쓰기 패턴(한자어 병기)까지 정밀하게 구현합니다.</p>
             </div>
           </div>
         </div>
@@ -207,7 +207,7 @@ export default function LandingPage() {
 
       {/* 5. Target Audience */}
       <section id="use-case" className="container text-center section-padding-bottom" style={{ paddingTop: '120px' }}>
-        <h2 className="font-bold-28 m-b-16">콘텐츠로 수익을 창출하는 모든 실무자를 위해</h2>
+        <h2 className="font-bold-28 m-b-16">텍스트 콘텐츠로 수익을 창출하는 모든 실무자를 위해</h2>
         <p className="text-muted m-b-60 font-18">누구에게 가장 필요할까요?</p>
 
         <div className="grid-target">
