@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
+import type { DetectionResult } from '@/app/api/analyze/route';
+
 // 워크플로우 상태 정의
 type WorkflowState = 'initial' | 'inspected' | 'direct_improve' | 'improved';
 
@@ -13,11 +15,53 @@ interface ImprovementResult {
   report: string;
 }
 
+// 배지 한국어 설명
+const BADGE_LABELS: Record<NonNullable<DetectionResult['badge']>, string> = {
+  human: '인간이 작성한 글일 가능성이 높습니다',
+  likely_human: '인간이 작성했을 가능성이 있습니다',
+  mixed: 'AI 보조 혹은 AI 주도 작성으로 보입니다',
+  likely_ai: 'AI가 작성했을 가능성이 높습니다',
+  ai: 'AI가 작성한 글일 가능성이 매우 높습니다',
+};
+
+// 신호 레벨 텍스트 - 각 항목은 AI 탐지 신호의 심각도를 나타냄
+// low = AI 신호 거의 없음, mid = 약간 있음, high = 심각
+const SIGNAL_LABELS: Record<string, { low: string; mid: string; high: string }> = {
+  burstiness:  { low: '심각', mid: '약간 있음', high: '거의 없음' }, // dangerValue가 높을수록 획일적
+  lexical:     { low: '거의 없음', mid: '약간 있음', high: '심각' },
+  structural:  { low: '거의 없음', mid: '약간 있음', high: '심각' },
+  conjunction: { low: '거의 없음', mid: '약간 있음', high: '심각' },
+};
+
+// 신호 레벨 색상 - low: 빨강(AI 신호 강함), high: 초록(AI 신호 약함)은
+// burstiness만 반전된 해석이므로 별도 처리
+const SIGNAL_COLORS = {
+  burstiness: { low: '#dc2626', mid: '#d97706', high: '#16a34a' },
+  default:    { low: '#16a34a', mid: '#d97706', high: '#dc2626' },
+};
+
+function getSignalLevel(v: number): 'low' | 'mid' | 'high' {
+  if (v < 0.3) return 'low';
+  if (v < 0.65) return 'mid';
+  return 'high';
+}
+
+const BADGE_COLORS: Record<NonNullable<DetectionResult['badge']>, string> = {
+  human: '#16a34a',
+  likely_human: '#65a30d',
+  mixed: '#d97706',
+  likely_ai: '#ea580c',
+  ai: '#dc2626',
+};
+
 export default function DashboardPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [workflowState, setWorkflowState] = useState<WorkflowState>('initial');
   const [originalText, setOriginalText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
 
   // 개선 이력 스택
   const [resultsStack, setResultsStack] = useState<ImprovementResult[]>([]);
@@ -42,9 +86,33 @@ export default function DashboardPage() {
   }, []);
 
   // 액션 핸들러
-  const handleInspect = () => {
-    if (!originalText.trim()) return;
-    setWorkflowState('inspected');
+  const handleInspect = async () => {
+    if (!originalText.trim() || isLoading) return;
+    setIsLoading(true);
+    setAnalysisError(null);
+    setDetectionResult(null);
+
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: originalText }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error ?? '분석 중 오류가 발생했습니다.');
+      }
+
+      setDetectionResult(data as DetectionResult);
+      setWorkflowState('inspected');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '알 수 없는 오류';
+      setAnalysisError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDirectImprove = () => {
@@ -71,6 +139,9 @@ export default function DashboardPage() {
     setWorkflowState('initial');
     setOriginalText('');
     setResultsStack([]);
+    setDetectionResult(null);
+    setAnalysisError(null);
+    setIsLoading(false);
   };
 
   return (
@@ -196,18 +267,18 @@ export default function DashboardPage() {
                 <textarea
                   value={originalText}
                   onChange={(e) => setOriginalText(e.target.value)}
-                  readOnly={workflowState !== 'initial'}
+                  readOnly={workflowState !== 'initial' || isLoading}
                   placeholder="AI가 작성한 텍스트를 이곳에 붙여넣으세요..."
                   className="font-15 w-full"
                   style={{
-                    minHeight: workflowState === 'initial' ? '240px' : '100px',
+                    minHeight: '240px',
                     borderRadius: '12px',
-                    border: workflowState === 'initial' ? '1px solid #e5e7eb' : 'none',
-                    backgroundColor: workflowState === 'initial' ? '#fff' : 'transparent',
+                    border: (workflowState === 'initial' && !isLoading) ? '1px solid #e5e7eb' : 'none',
+                    backgroundColor: (workflowState === 'initial' && !isLoading) ? '#fff' : 'transparent',
                     color: '#111827',
                     resize: 'none',
                     outline: 'none',
-                    padding: workflowState === 'initial' ? '16px' : '0'
+                    padding: (workflowState === 'initial' && !isLoading) ? '16px' : '0'
                   }}
                 ></textarea>
 
@@ -216,36 +287,115 @@ export default function DashboardPage() {
                     <button onClick={handleDirectImprove} className="btn-outline font-bold-14" style={{ borderRadius: '8px', padding: '10px 20px' }}>
                       ⚡️ 검사 없이 바로 개선하기
                     </button>
-                    <button onClick={handleInspect} className="btn-primary font-bold-14" style={{ borderRadius: '8px', padding: '10px 20px' }}>
-                      📊 텍스트 검사하기
+                    <button
+                      onClick={handleInspect}
+                      disabled={isLoading || originalText.trim().length < 30}
+                      className="btn-primary font-bold-14"
+                      style={{ borderRadius: '8px', padding: '10px 20px', opacity: isLoading || originalText.trim().length < 30 ? 0.6 : 1, cursor: isLoading || originalText.trim().length < 30 ? 'not-allowed' : 'pointer' }}
+                    >
+                      {isLoading ? <>⏳ 분석 중...</> : '📊 텍스트 검사하기'}
                     </button>
+                  </div>
+                )}
+
+                {/* 로딩 상태 표시 */}
+                {isLoading && (
+                  <div className="flex-row-center gap-12 m-t-16 p-16" style={{ backgroundColor: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
+                    <div style={{ width: '20px', height: '20px', border: '3px solid #0ea5e9', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>
+                    <span className="font-14" style={{ color: '#0369a1' }}>한국어 분석 엔진 구동 중...</span>
+                  </div>
+                )}
+
+                {/* 오류 메시지 */}
+                {analysisError && (
+                  <div className="flex-row gap-12 m-t-16 p-16" style={{ backgroundColor: '#fef2f2', borderRadius: '12px', border: '1px solid #fecaca' }}>
+                    <span style={{ fontSize: '18px' }}>⚠️</span>
+                    <span className="font-14" style={{ color: '#dc2626' }}>{analysisError}</span>
                   </div>
                 )}
               </div>
 
-              {/* === Step 2 Box: 검사 결과 박스 (inspected 상태에서만 보임) === */}
-              {workflowState === 'inspected' && (
-                <div className="card p-24" style={{ borderLeft: '4px solid var(--error-color)' }}>
-                  <h3 className="font-bold-15 m-b-16">🤖 AI 탐지 분석 결과</h3>
-                  <div className="flex-row items-center gap-32">
-                    <div className="text-center">
-                      <h2 className="text-error" style={{ fontSize: '48px', fontWeight: 800, lineHeight: 1 }}>35<span className="font-16 text-light">/100</span></h2>
+              {/* === Step 2 Box: 검사 결과 박스 === */}
+              {workflowState === 'inspected' && detectionResult && (() => {
+                const badgeColor = BADGE_COLORS[detectionResult.badge];
+                const badgeLabel = BADGE_LABELS[detectionResult.badge];
+                const a = detectionResult.rawAnalysis;
+
+                const signals = [
+                  { label: '문장 길이의 회일성', dangerValue: 1 - a.burstinessScore, key: 'burstiness' },
+                  { label: 'AI 특유 어휘의 빈번한 사용', dangerValue: a.aiVocabularyDensity, key: 'lexical' },
+                  { label: '구조적 패턴의 반복', dangerValue: a.structuralRigidity, key: 'structural' },
+                  { label: '접속어의 과도한 반복 사용', dangerValue: a.conjunctionDensity, key: 'conjunction' },
+                ];
+
+                return (
+                  <div className="card" style={{ padding: '36px', border: `1.5px solid ${badgeColor}` }}>
+
+                    {/* 점수 헤더 */}
+                    <div className="flex-row items-center gap-32" style={{ marginBottom: '32px' }}>
+                      <div style={{ textAlign: 'center', minWidth: '130px' }}>
+                        <div style={{ fontSize: '72px', fontWeight: 900, lineHeight: 1, color: badgeColor }}>
+                          {detectionResult.humanScore}%
+                        </div>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginTop: '8px' }}>
+                          인간 작성 확률
+                        </div>
+                      </div>
+
+                      <div style={{ width: '1px', backgroundColor: '#e5e7eb', alignSelf: 'stretch' }}></div>
+
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: badgeColor, marginBottom: '10px' }}>🔍 분석 결과</div>
+                        <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#374151', marginBottom: '12px' }}>{detectionResult.summary}</p>
+                        <div style={{ fontSize: '13px', color: '#6b7280' }}>{badgeLabel}</div>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-bold-14 text-error m-b-8">AI 작성 확률이 매우 높습니다.</p>
-                      <p className="font-13 text-muted" style={{ lineHeight: 1.6 }}>기계적인 문장 구조와 잦은 접속사 사용 패턴이 감지되었습니다. 인터넷에 그대로 발행할 경우 검색 엔진 로직에 의해 스팸 분류될 가능성이 있습니다.</p>
+
+                    {/* AI 탐지 신호 */}
+                    <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '28px', marginBottom: '28px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#6b7280', marginBottom: '6px' }}>AI 탐지 신호</div>
+                      <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>아래 항목이 심각할수록 AI 작성 가능성이 높아집니다</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {signals.map(({ label, dangerValue, key }) => {
+                          const level = getSignalLevel(dangerValue);
+                          const signalText = SIGNAL_LABELS[key][level];
+                          const colorMap = key === 'burstiness' ? SIGNAL_COLORS.burstiness : SIGNAL_COLORS.default;
+                          const dotColor = colorMap[level];
+                          return (
+                            <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '14px', color: '#374151' }}>{label}</span>
+                              <span style={{ fontSize: '13px', fontWeight: 700, color: dotColor, display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, marginLeft: '16px' }}>
+                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: dotColor, display: 'inline-block' }}></span>
+                                {signalText}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
+
+                    {/* 탐지된 AI 어휘 */}
+                    {detectionResult.detectedKeywords.length > 0 && (
+                      <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '24px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#6b7280', marginBottom: '14px' }}>탐지된 AI 특유 표현</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {detectionResult.detectedKeywords.map(kw => (
+                            <span key={kw} style={{ fontSize: '13px', backgroundColor: '#fef9ec', border: '1px solid #fde68a', borderRadius: '6px', padding: '4px 12px', color: '#92400e' }}>{kw}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* === Step 3 Box: 개선 설정 및 액션 버튼 === */}
               {workflowState !== 'initial' && (
-                <div className="card p-32" style={{ border: '2px solid var(--primary-color)' }}>
-                  <h3 className="font-bold-18 m-b-8">인간처럼 글 개선하기</h3>
-                  <p className="font-13 text-muted m-b-24">AI 특유의 글 쓰기 특징들을 지우고 보다 인간이 작성한 글처럼 보이도록 개선합니다.</p>
+                <div className="card" style={{ padding: '40px', border: '2px solid var(--primary-color)' }}>
+                  <h3 className="font-bold-18" style={{ marginBottom: '10px' }}>인간처럼 글 개선하기</h3>
+                  <p className="font-13 text-muted" style={{ marginBottom: '36px' }}>AI 특유의 글 쓰기 특징들을 지우고 보다 인간이 작성한 글처럼 보이도록 개선합니다.</p>
 
-                  <div className="flex-row gap-24 m-b-24">
+                  <div className="flex-row gap-24" style={{ marginBottom: '32px' }}>
                     <div className="flex-1">
                       <label className="font-bold-13 text-muted m-b-8" style={{ display: 'block' }}>작성 모드</label>
                       <select className="w-full font-14" style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', outline: 'none' }}>
@@ -264,8 +414,8 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex-row gap-40 m-b-32">
-                    <div className="flex-1">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', marginBottom: '36px' }}>
+                    <div>
                       <div className="flex-row justify-between m-b-8">
                         <span className="font-bold-13 text-muted">진지함 레벨</span>
                         <span className="font-bold-13 text-primary">Lv. 3</span>
@@ -276,7 +426,7 @@ export default function DashboardPage() {
                         <span className="font-11 text-light">격식</span>
                       </div>
                     </div>
-                    <div className="flex-1">
+                    <div>
                       <div className="flex-row justify-between m-b-8">
                         <span className="font-bold-13 text-muted">감성/주관 레벨</span>
                         <span className="font-bold-13 text-primary">Lv. 4</span>
@@ -290,7 +440,7 @@ export default function DashboardPage() {
                   </div>
 
                   {/* 페르소나 적용 영역 */}
-                  <div className="flex-row justify-between items-center m-b-32 p-16" style={{ backgroundColor: '#f3f4f6', borderRadius: '12px' }}>
+                  <div className="flex-row justify-between items-center p-16" style={{ backgroundColor: '#f3f4f6', borderRadius: '12px', marginBottom: '36px' }}>
                     <div>
                       <div className="flex-row items-center gap-8 m-b-4">
                         <span className="font-bold-14">내 페르소나 적용</span>
