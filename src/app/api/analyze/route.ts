@@ -209,9 +209,7 @@ ${genreInstruction}
       }]
     }],
     generationConfig: {
-      temperature: 0.1,      // 낮은 temperature로 일관성 확보
-      topK: 10,
-      topP: 0.5,
+      temperature: 0.1,
       responseMimeType: 'application/json',
       responseSchema: {
         type: "OBJECT",
@@ -230,12 +228,12 @@ ${genreInstruction}
         },
         required: ["stepByStepAnalysis", "humanScore", "summary"]
       },
-      maxOutputTokens: 1000,
+      maxOutputTokens: 1024,
     }
   };
 
-  // 속도 최적화를 위해 gemini-2.5-flash 모델 고정 (동적 선택 1-2초 절약)
-  const model = 'gemini-2.5-flash';
+  // gemini-2.0-flash: thinking 모드가 없어 토큰 낙비 없음. 가장 빠르고 안정적인 모델.
+  const model = 'gemini-2.0-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
   console.log(`[analyze] 선택된 Gemini 모델: ${model} (속도 최적화 적용)`);
 
