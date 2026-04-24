@@ -213,7 +213,24 @@ ${genreInstruction}
       topK: 10,
       topP: 0.5,
       responseMimeType: 'application/json',
-      maxOutputTokens: 1000,  // 속도 최적화를 위해 제한했으나, 내부 thoughts 연산으로 인해 MAX_TOKENS 에러 발생. 1000으로 상향 조정.
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          stepByStepAnalysis: {
+            type: "OBJECT",
+            properties: {
+              toneAndStyle: { type: "STRING" },
+              structuralFeatures: { type: "STRING" },
+              quantitativeInterpretation: { type: "STRING" }
+            },
+            required: ["toneAndStyle", "structuralFeatures", "quantitativeInterpretation"]
+          },
+          humanScore: { type: "INTEGER" },
+          summary: { type: "STRING" }
+        },
+        required: ["stepByStepAnalysis", "humanScore", "summary"]
+      },
+      maxOutputTokens: 1000,
     }
   };
 
@@ -269,7 +286,7 @@ ${genreInstruction}
   }
 
   if (!parsed) {
-    throw new Error(`Gemini 응답 JSON 파싱 실패. 원본: ${rawText.substring(0, 200)}`);
+    throw new Error(`Gemini 응답 JSON 파싱 실패. 원본: ${rawText}`);
   }
 
   return {
