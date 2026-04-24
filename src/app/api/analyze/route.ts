@@ -229,11 +229,10 @@ ${genreInstruction}
         required: ["stepByStepAnalysis", "humanScore", "summary"]
       },
       maxOutputTokens: 1024,
-    },
-    // thinkingBudget: 0 → gemini-2.5-flash의 내부 사고(Thinking) 과정을 완전히 비활성화
-    // 이를 통해 실제 JSON 응답에 100% 토큰 할당 가능로 토큰 잘림 문제 근본 해결
-    thinkingConfig: {
-      thinkingBudget: 0
+      // thinkingBudget: 0 → gemini-2.5-flash의 내부 사고(Thinking) 완전히 비활성화
+      thinkingConfig: {
+        thinkingBudget: 0
+      }
     }
   };
 
