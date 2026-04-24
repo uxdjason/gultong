@@ -229,11 +229,16 @@ ${genreInstruction}
         required: ["stepByStepAnalysis", "humanScore", "summary"]
       },
       maxOutputTokens: 1024,
+    },
+    // thinkingBudget: 0 → gemini-2.5-flash의 내부 사고(Thinking) 과정을 완전히 비활성화
+    // 이를 통해 실제 JSON 응답에 100% 토큰 할당 가능로 토큰 잘림 문제 근본 해결
+    thinkingConfig: {
+      thinkingBudget: 0
     }
   };
 
-  // gemini-2.0-flash: thinking 모드가 없어 토큰 낙비 없음. 가장 빠르고 안정적인 모델.
-  const model = 'gemini-2.0-flash';
+  // gemini-2.5-flash: thinkingBudget 0으로 thinking 비활성화. 원래 모델로 복교.
+  const model = 'gemini-2.5-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
   console.log(`[analyze] 선택된 Gemini 모델: ${model} (속도 최적화 적용)`);
 
