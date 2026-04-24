@@ -100,10 +100,17 @@ export default function DashboardPage() {
         body: JSON.stringify({ text: originalText, genre: selectedGenre }),
       });
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const textData = await response.text();
+        throw new Error(`서버에서 올바르지 않은 응답이 반환되었습니다. (HTTP ${response.status})\n응답 내용: ${textData.substring(0, 100)}...`);
+      }
 
       if (!response.ok) {
-        throw new Error(data.error ?? '분석 중 오류가 발생했습니다.');
+        throw new Error(data.error ?? `서버 에러 발생 (HTTP ${response.status})`);
       }
 
       setDetectionResult(data as DetectionResult);

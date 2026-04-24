@@ -183,10 +183,10 @@ ${genreInstruction}
 - 종합 AI 의심 지수 0.3 이하 → humanScore 70 이상
 
 [분석 지침 - Chain of Thought (사고의 사슬)]
-반드시 점수를 내리기 전에 다음 3가지 관점에서 단계별로 사고(분석)하십시오.
-1. toneAndStyle (어조와 문체): 글에 작성자의 개인적인 경험이나 주관적인 감정, 고유한 문체가 묻어나는가? 아니면 지나치게 중립적이고 교과서적이며 불필요하게 친절한가?
-2. structuralFeatures (구조적 특징): 기계적인 서론-본론-결론 구조, 지나치게 완벽한 병렬 나열, 소제목의 남용이 있는가?
-3. quantitativeInterpretation (정량적 데이터 해석): 위 1차 정량 분석 결과가 실제 텍스트의 어떤 부분과 일치하는가?
+반드시 점수를 내리기 전에 다음 3가지 관점에서 단계별로 사고(분석)하십시오. (응답 속도를 위해 각 항목은 반드시 1문장으로 핵심만 짧게 작성하세요)
+1. toneAndStyle (어조/문체): 주관적 감정이 있는가, 기계적인가? (1문장)
+2. structuralFeatures (구조적 특징): 완벽한 병렬 나열, 소제목 남용이 있는가? (1문장)
+3. quantitativeInterpretation (정량적 해석): 위 1차 정량 분석 결과와 실제 텍스트가 일치하는가? (1문장)
 
 위 지침을 바탕으로 교차 검증하여 최종 판정을 내리세요.
 단, 텍스트가 너무 짧거나(100자 미만) 분석 데이터가 불충분한 경우 불확실성을 반영하세요.
@@ -213,13 +213,14 @@ ${genreInstruction}
       topK: 10,
       topP: 0.5,
       responseMimeType: 'application/json',
+      maxOutputTokens: 300,  // 속도 최적화를 위해 출력 토큰 제한
     }
   };
 
-  // 최적 모델 동적 선택
-  const model = await getBestAvailableModel(apiKey);
+  // 속도 최적화를 위해 gemini-2.5-flash 모델 고정 (동적 선택 1-2초 절약)
+  const model = 'gemini-2.5-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-  console.log(`[analyze] 선택된 Gemini 모델: ${model}`);
+  console.log(`[analyze] 선택된 Gemini 모델: ${model} (속도 최적화 적용)`);
 
   const response = await fetchWithRetry(url, {
     method: 'POST',
@@ -285,6 +286,9 @@ ${genreInstruction}
 // =====================
 // Route Handler
 // =====================
+
+export const runtime = 'edge'; // Cloudflare Pages 호환성 보장
+export const maxDuration = 60; // Vercel/Cloudflare 환경 타임아웃 60초 연장
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // 1. API 키 확인
