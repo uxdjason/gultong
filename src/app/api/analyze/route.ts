@@ -213,7 +213,7 @@ ${genreInstruction}
       topK: 10,
       topP: 0.5,
       responseMimeType: 'application/json',
-      maxOutputTokens: 300,  // 속도 최적화를 위해 출력 토큰 제한
+      maxOutputTokens: 1000,  // 속도 최적화를 위해 제한했으나, 내부 thoughts 연산으로 인해 MAX_TOKENS 에러 발생. 1000으로 상향 조정.
     }
   };
 
