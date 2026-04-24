@@ -240,7 +240,7 @@ ${genreInstruction}
   };
 
   if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-    throw new Error('Gemini API 응답 형식 오류: candidates 없음');
+    throw new Error(`Gemini API 응답 형식 오류: candidates 없음. 원본 데이터: ${JSON.stringify(data)}`);
   }
 
   const rawText = data.candidates[0].content.parts[0].text.trim();
