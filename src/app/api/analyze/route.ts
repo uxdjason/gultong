@@ -20,6 +20,11 @@ export interface DetectionResult {
   summary: string;               // 사용자에게 보여줄 한국어 분석 코멘트
   detectedKeywords: string[];    // 탐지된 AI 어휘 목록
   rawAnalysis: AnalyzerResult;   // 자체 엔진 정량 데이터 (디버깅/표시용)
+  stepByStepAnalysis?: {         // CoT 사고 과정
+    toneAndStyle: string;
+    structuralFeatures: string;
+    quantitativeInterpretation: string;
+  };
 }
 
 // =====================
@@ -79,6 +84,11 @@ async function fetchWithRetry(
 // =====================
 
 interface GeminiLLMResponse {
+  stepByStepAnalysis: {
+    toneAndStyle: string;
+    structuralFeatures: string;
+    quantitativeInterpretation: string;
+  };
   humanScore: number;
   summary: string;
 }
@@ -124,22 +134,44 @@ async function getBestAvailableModel(apiKey: string): Promise<string> {
 async function callGeminiForFinalVerdict(
   originalText: string,
   analysis: AnalyzerResult,
-  apiKey: string
+  apiKey: string,
+  genre: string
 ): Promise<GeminiLLMResponse> {
+
+  // 장르별 특수 지침 생성
+  let genreInstruction = '';
+  if (genre === 'academic') {
+    genreInstruction = `
+[특별 지침: 학술/전문 문서]
+사용자가 입력한 글은 과거 논문, 보고서, 번역서 등 학술적인 목적으로 작성된 전문 문서입니다. 
+따라서 문어체, 형식적인 접속사('따라서', '그러므로', '이러한'), 번역투, 서론-본론-결론의 엄격한 구조가 매우 자연스럽게 나타납니다.
+**절대 형식적이고 딱딱하다는 이유만으로 AI라고 판단하지 마십시오.** (인간 학자들도 그렇게 씁니다.)
+오직 '정보의 환각(Hallucination)', '알맹이 없는 동어반복', '기계적인 클리셰' 만을 근거로 판별하십시오.`;
+  } else if (genre === 'creative') {
+    genreInstruction = `
+[특별 지침: 문학/창작물]
+사용자가 입력한 글은 시, 소설, 수필 등의 창작물입니다.
+인간 특유의 비선형적인 감정선과 은유를 파악하십시오. AI의 기계적이고 상투적인 과장된 비유(클리셰)와 명확히 구분하십시오.`;
+  } else {
+    genreInstruction = `
+[특별 지침: 일반/블로그]
+정보 전달 목적의 일반적인 웹 글입니다. 기계적인 리스트 나열, 무의미한 길이 늘이기, 번역투의 상투어 남용을 엄격하게 감점하십시오.`;
+  }
 
   // 정량 데이터를 기반으로 시스템 프롬프트 동적 조립
   // 핵심: LLM에게 "판사" 역할만 부여. 수사는 우리 엔진이 이미 완료.
   const systemPrompt = `당신은 글통 서비스의 AI 텍스트 최종 판정관입니다.
 우리 자체 한국어 분석 엔진이 이미 아래의 정량적 팩트를 계산해 두었습니다.
 이 데이터를 절대적인 근거로 삼아 최종 점수만 도출하세요.
+${genreInstruction}
 
 [1차 정량 분석 결과 - 자체 엔진 산출]
 - 총 글자 수: ${analysis.textLength}자
 - 문장 수: ${analysis.sentenceCount}개, 평균 문장 길이: ${analysis.avgSentenceLength}자
-- 문장 호흡 분산도(Burstiness): ${analysis.burstinessScore} / 1.0 (높을수록 인간적)
-- AI 어휘 출현 밀도: ${analysis.aiVocabularyDensity} / 1.0 (높을수록 AI적)
-- 구조적 기계성 점수: ${analysis.structuralRigidity} / 1.0 (높을수록 AI적)
-- 접속어 과용 밀도: ${analysis.conjunctionDensity} / 1.0 (높을수록 AI적)
+- 문장 호흡 분산도(Burstiness): ${analysis.burstinessScore} / 1.0 (높을수록 인간적. 문장 길이가 불규칙함)
+- AI 어휘 출현 밀도: ${analysis.aiVocabularyDensity} / 1.0 (높을수록 AI적. 상투어, 번역투 과용)
+- 구조적 기계성 점수: ${analysis.structuralRigidity} / 1.0 (높을수록 AI적. 기계적인 병렬 구조, 리스트 과용)
+- 접속어 과용 밀도: ${analysis.conjunctionDensity} / 1.0 (높을수록 AI적. '또한', '반면' 등 과용)
 - 종합 AI 의심 지수: ${analysis.compositeSuspicionIndex} / 1.0
 - 탐지된 AI 특유 표현: ${analysis.detectedAiKeywords.length > 0 ? analysis.detectedAiKeywords.join(', ') : '없음'}
 - 카테고리별 탐지: ${JSON.stringify(analysis.categoryHits)}
@@ -150,13 +182,24 @@ async function callGeminiForFinalVerdict(
 - 종합 AI 의심 지수 0.3~0.5 → humanScore 50~70
 - 종합 AI 의심 지수 0.3 이하 → humanScore 70 이상
 
- 위 정량 데이터와 원본 텍스트의 질감(어조, 개인성, 구체성)을 교차 검증하여 최종 판정을 내리세요.
+[분석 지침 - Chain of Thought (사고의 사슬)]
+반드시 점수를 내리기 전에 다음 3가지 관점에서 단계별로 사고(분석)하십시오.
+1. toneAndStyle (어조와 문체): 글에 작성자의 개인적인 경험이나 주관적인 감정, 고유한 문체가 묻어나는가? 아니면 지나치게 중립적이고 교과서적이며 불필요하게 친절한가?
+2. structuralFeatures (구조적 특징): 기계적인 서론-본론-결론 구조, 지나치게 완벽한 병렬 나열, 소제목의 남용이 있는가?
+3. quantitativeInterpretation (정량적 데이터 해석): 위 1차 정량 분석 결과가 실제 텍스트의 어떤 부분과 일치하는가?
+
+위 지침을 바탕으로 교차 검증하여 최종 판정을 내리세요.
 단, 텍스트가 너무 짧거나(100자 미만) 분석 데이터가 불충분한 경우 불확실성을 반영하세요.
 
 반드시 아래 JSON 형식으로만 응답하세요:
 {
+  "stepByStepAnalysis": {
+    "toneAndStyle": "[어조와 문체에 대한 분석 내용]",
+    "structuralFeatures": "[구조적 특징에 대한 분석 내용]",
+    "quantitativeInterpretation": "[정량적 데이터와 텍스트의 대조 해석]"
+  },
   "humanScore": [0~100 사이의 정수. 높을수록 인간 작성 가능성이 높음],
-  "summary": "[평가 이유를 한국어로 2~3문장. 정중하고 전문적인 어조. 내부 기술 용어 노출 금지]"
+  "summary": "[위 사고 과정을 종합한 최종 평가 이유를 한국어로 2~3문장. 정중하고 전문적인 어조. 내부 기술 용어 노출 금지]"
 }`;
 
   const requestBody = {
@@ -229,6 +272,11 @@ async function callGeminiForFinalVerdict(
   }
 
   return {
+    stepByStepAnalysis: parsed.stepByStepAnalysis ?? {
+      toneAndStyle: '',
+      structuralFeatures: '',
+      quantitativeInterpretation: ''
+    },
     humanScore: Math.min(Math.max(Math.round(parsed.humanScore), 0), 100),
     summary: parsed.summary ?? '분석을 완료했습니다.',
   };
@@ -251,9 +299,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // 2. 요청 파싱
   let text: string;
+  let genre: string = 'general';
   try {
-    const body = await request.json() as { text?: string };
+    const body = await request.json() as { text?: string, genre?: string };
     text = body.text?.trim() ?? '';
+    genre = body.genre ?? 'general';
   } catch {
     return NextResponse.json(
       { error: '요청 형식 오류: JSON 파싱 실패' },
@@ -282,8 +332,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    // 4. 1차: 자체 한국어 분석 엔진 실행
-    const analysis = analyzeKoreanText(text);
+    // 4. 1차: 자체 한국어 분석 엔진 실행 (장르 전달)
+    const analysis = analyzeKoreanText(text, genre);
     console.log('[analyze] 자체 분석 완료:', {
       textLength: analysis.textLength,
       burstiness: analysis.burstinessScore,
@@ -292,8 +342,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       suspicion: analysis.compositeSuspicionIndex,
     });
 
-    // 5. 2차: Gemini API 최종 판정 (정량 데이터 주입)
-    const geminiVerdict = await callGeminiForFinalVerdict(text, analysis, apiKey);
+    // 5. 2차: Gemini API 호출하여 최종 판정 (장르 전달)
+    const geminiVerdict = await callGeminiForFinalVerdict(text, analysis, apiKey, genre);
 
     // 6. 결과 조합 및 반환
     const humanScore = geminiVerdict.humanScore;
@@ -304,6 +354,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       summary: geminiVerdict.summary,
       detectedKeywords: analysis.detectedAiKeywords,
       rawAnalysis: analysis,
+      stepByStepAnalysis: geminiVerdict.stepByStepAnalysis,
     };
 
     return NextResponse.json(result, { status: 200 });

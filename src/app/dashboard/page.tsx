@@ -59,6 +59,7 @@ export default function DashboardPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [workflowState, setWorkflowState] = useState<WorkflowState>('initial');
   const [originalText, setOriginalText] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState<string>('general');
   const [isLoading, setIsLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
@@ -96,7 +97,7 @@ export default function DashboardPage() {
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: originalText }),
+        body: JSON.stringify({ text: originalText, genre: selectedGenre }),
       });
 
       const data = await response.json();
@@ -283,10 +284,53 @@ export default function DashboardPage() {
                 ></textarea>
 
                 {workflowState === 'initial' && (
-                  <div className="flex-row justify-end gap-12 m-t-16 pt-16" style={{ borderTop: '1px solid #f3f4f6' }}>
-                    <button onClick={handleDirectImprove} className="btn-outline font-bold-14" style={{ borderRadius: '8px', padding: '10px 20px' }}>
-                      ⚡️ 검사 없이 바로 개선하기
-                    </button>
+                  <div className="flex-col gap-16 m-t-16 pt-16" style={{ borderTop: '1px solid #f3f4f6' }}>
+                    
+                    {/* 장르 선택 옵션 */}
+                    <div className="flex-col gap-8">
+                      <span className="font-bold-13 text-muted">📝 글의 장르를 선택해 주세요 (오탐지 방지용)</span>
+                      <div className="flex-row gap-8 flex-wrap">
+                        <button 
+                          onClick={() => setSelectedGenre('general')}
+                          style={{
+                            padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
+                            backgroundColor: selectedGenre === 'general' ? '#111827' : '#f3f4f6',
+                            color: selectedGenre === 'general' ? '#fff' : '#4b5563',
+                            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                          }}
+                        >
+                          일반/블로그 (엄격)
+                        </button>
+                        <button 
+                          onClick={() => setSelectedGenre('academic')}
+                          style={{
+                            padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
+                            backgroundColor: selectedGenre === 'academic' ? '#111827' : '#f3f4f6',
+                            color: selectedGenre === 'academic' ? '#fff' : '#4b5563',
+                            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                          }}
+                        >
+                          학술/전문/번역서 (접속사 허용)
+                        </button>
+                        <button 
+                          onClick={() => setSelectedGenre('creative')}
+                          style={{
+                            padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
+                            backgroundColor: selectedGenre === 'creative' ? '#111827' : '#f3f4f6',
+                            color: selectedGenre === 'creative' ? '#fff' : '#4b5563',
+                            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                          }}
+                        >
+                          문학/창작 (비유 위주 검사)
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 액션 버튼 */}
+                    <div className="flex-row justify-end gap-12 mt-4">
+                      <button onClick={handleDirectImprove} className="btn-outline font-bold-14" style={{ borderRadius: '8px', padding: '10px 20px' }}>
+                        ⚡️ 검사 없이 바로 개선하기
+                      </button>
                     <button
                       onClick={handleInspect}
                       disabled={isLoading || originalText.trim().length < 30}
@@ -295,6 +339,7 @@ export default function DashboardPage() {
                     >
                       {isLoading ? <>⏳ 분석 중...</> : '📊 텍스트 검사하기'}
                     </button>
+                  </div>
                   </div>
                 )}
 
@@ -347,7 +392,19 @@ export default function DashboardPage() {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '13px', fontWeight: 700, color: badgeColor, marginBottom: '10px' }}>🔍 분석 결과</div>
                         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#374151', marginBottom: '12px' }}>{detectionResult.summary}</p>
-                        <div style={{ fontSize: '13px', color: '#6b7280' }}>{badgeLabel}</div>
+                        
+                        {detectionResult.stepByStepAnalysis && (
+                          <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px', color: '#4b5563' }}>
+                            <div style={{ fontWeight: 700, marginBottom: '10px', color: '#111827', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>🧠</span> AI 추론 과정 (Chain of Thought)
+                            </div>
+                            <div style={{ marginBottom: '8px' }}><span style={{ fontWeight: 600, color: '#374151' }}>어조와 문체:</span> {detectionResult.stepByStepAnalysis.toneAndStyle}</div>
+                            <div style={{ marginBottom: '8px' }}><span style={{ fontWeight: 600, color: '#374151' }}>구조적 특징:</span> {detectionResult.stepByStepAnalysis.structuralFeatures}</div>
+                            <div><span style={{ fontWeight: 600, color: '#374151' }}>데이터 해석:</span> {detectionResult.stepByStepAnalysis.quantitativeInterpretation}</div>
+                          </div>
+                        )}
+
+                        <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '12px' }}>{badgeLabel}</div>
                       </div>
                     </div>
 

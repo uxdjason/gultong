@@ -93,7 +93,7 @@ interface LexicalResult {
  * 15 weighted hits = density 1.0 (명백한 AI 수준)
  * 5 weighted hits = density 0.33 (약간 의심)
  */
-function analyzeLexicalDensity(text: string): LexicalResult {
+function analyzeLexicalDensity(text: string, genre: string): LexicalResult {
   const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
   if (wordCount === 0) return { density: 0, detectedKeywords: [], categoryHits: {}, weightedHitCount: 0 };
 
@@ -102,6 +102,10 @@ function analyzeLexicalDensity(text: string): LexicalResult {
   const categoryHits: Record<string, number> = {};
 
   for (const patternDef of ALL_PATTERNS) {
+    if (patternDef.ignoreInGenres && patternDef.ignoreInGenres.includes(genre)) {
+      continue; // 해당 장르에서는 무시
+    }
+
     const regex = new RegExp(patternDef.pattern.source, patternDef.pattern.flags);
     const matches = text.match(regex);
 
@@ -199,10 +203,11 @@ function calculateConjunctionDensity(text: string): number {
  * 4가지 지표를 가중 평균하여 종합 AI 의심 지수를 산출합니다.
  *
  * 가중치 설계 근거:
- * - AI 어휘 밀도(40%): 가장 직접적이고 명확한 AI 흔적
- * - Burstiness(25%): AI vs 인간 구분의 핵심 수학적 지표
- * - 구조적 기계성(25%): AI 특유의 문서 구조 강박
- * - 접속어 밀도(10%): 보조 신호
+ * 가중치 설계 근거 (300개 벤치마크 결과 기반 최적화):
+ * - 구조적 기계성(45%): AI vs 인간 구분의 가장 강력하고 확실한 지표 (AI 평균 0.468 vs 인간 0.177)
+ * - AI 어휘 밀도(45%): 두 번째로 확실한 지표 (AI 평균 0.455 vs 인간 0.338)
+ * - Burstiness(10%): 미세한 차이만 보임 (AI 0.625 vs 인간 0.666)
+ * - 접속어 밀도(0%): 오히려 인간이 접속어를 더 많이 사용하여 변별력이 없으므로 제외
  */
 function calculateCompositeSuspicionIndex(
   burstinessScore: number,
@@ -213,10 +218,9 @@ function calculateCompositeSuspicionIndex(
   const burstinessAI = 1 - burstinessScore;
 
   const weighted =
-    aiVocabularyDensity * 0.40 +
-    burstinessAI * 0.25 +
-    structuralRigidity * 0.25 +
-    conjunctionDensity * 0.10;
+    aiVocabularyDensity * 0.45 +
+    structuralRigidity * 0.45 +
+    burstinessAI * 0.10;
 
   return Math.min(Math.max(weighted, 0), 1);
 }
@@ -228,14 +232,20 @@ function calculateCompositeSuspicionIndex(
 /**
  * 한국어 텍스트를 종합 분석하여 정량화된 결과를 반환합니다.
  */
-export function analyzeKoreanText(text: string): AnalyzerResult {
+export function analyzeKoreanText(text: string, genre: string = 'general'): AnalyzerResult {
   const trimmedText = text.trim();
   const textLength = trimmedText.length;
 
   const { score: burstinessScore, lengths, avg: avgSentenceLength } = calculateBurstiness(trimmedText);
-  const { density: aiVocabularyDensity, detectedKeywords, categoryHits, weightedHitCount } = analyzeLexicalDensity(trimmedText);
-  const structuralRigidity = calculateStructuralRigidity(trimmedText);
+  const { density: aiVocabularyDensity, detectedKeywords, categoryHits, weightedHitCount } = analyzeLexicalDensity(trimmedText, genre);
+  let structuralRigidity = calculateStructuralRigidity(trimmedText);
   const conjunctionDensity = calculateConjunctionDensity(trimmedText);
+
+  // 장르별 특수 보정
+  if (genre === 'academic') {
+    // 학술 문서는 서론/본론/결론, 번호 매기기 등의 구조가 자연스러우므로 구조적 기계성 의심도를 대폭 낮춤
+    structuralRigidity = structuralRigidity * 0.3; 
+  }
 
   const sentenceCount = lengths.length;
 

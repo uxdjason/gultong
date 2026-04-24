@@ -11,18 +11,19 @@ export interface DictionaryPattern {
   category: string;
   weight: number; // 1.0 = 기본, 1.5 = 강한 신호, 2.0 = 매우 강한 신호
   label: string;  // 사용자에게 보여줄 표현
+  ignoreInGenres?: string[]; // 이 패턴을 검사에서 무시할 장르 (예: ['academic'])
 }
 
 /** 1. 상투적 어휘 (Cliché Vocabulary) */
 const CLICHE_VOCABULARY: DictionaryPattern[] = [
-  { pattern: /결론적으로\s*말하자면/g, category: 'cliche', weight: 1.5, label: '결론적으로 말하자면' },
-  { pattern: /요약하자면|요약하면|종합해\s*보면/g, category: 'cliche', weight: 1.5, label: '요약/종합 상투어' },
-  { pattern: /궁극적으로/g, category: 'cliche', weight: 1.0, label: '궁극적으로' },
+  { pattern: /결론적으로\s*말하자면/g, category: 'cliche', weight: 1.5, label: '결론적으로 말하자면', ignoreInGenres: ['academic'] },
+  { pattern: /요약하자면|요약하면|종합해\s*보면/g, category: 'cliche', weight: 1.5, label: '요약/종합 상투어', ignoreInGenres: ['academic'] },
+  { pattern: /궁극적으로/g, category: 'cliche', weight: 1.0, label: '궁극적으로', ignoreInGenres: ['academic'] },
   { pattern: /무엇보다도/g, category: 'cliche', weight: 1.0, label: '무엇보다도' },
-  { pattern: /흥미롭게도/g, category: 'cliche', weight: 1.5, label: '흥미롭게도' },
-  { pattern: /다양한\s*측면에서|여러\s*관점에서/g, category: 'cliche', weight: 1.0, label: '다양한 측면/관점' },
+  { pattern: /흥미롭게도/g, category: 'cliche', weight: 1.5, label: '흥미롭게도', ignoreInGenres: ['academic'] },
+  { pattern: /다양한\s*측면에서|여러\s*관점에서/g, category: 'cliche', weight: 1.0, label: '다양한 측면/관점', ignoreInGenres: ['academic'] },
   { pattern: /균형\s*잡힌/g, category: 'cliche', weight: 1.0, label: '균형 잡힌' },
-  { pattern: /심층적으로\s*분석하면/g, category: 'cliche', weight: 1.5, label: '심층적으로 분석하면' },
+  { pattern: /심층적으로\s*분석하면/g, category: 'cliche', weight: 1.5, label: '심층적으로 분석하면', ignoreInGenres: ['academic'] },
   { pattern: /핵심적인\s*요소|중추적인\s*역할/g, category: 'cliche', weight: 1.0, label: '핵심적 요소/중추적 역할' },
   { pattern: /중요한\s*역할을/g, category: 'cliche', weight: 1.0, label: '중요한 역할을' },
   { pattern: /필수적인/g, category: 'cliche', weight: 0.8, label: '필수적인' },
@@ -58,33 +59,47 @@ const CLICHE_VOCABULARY: DictionaryPattern[] = [
   { pattern: /~에\s*대한\s*이해를\s*높이/g, category: 'cliche', weight: 1.5, label: '~에 대한 이해를 높이' },
   { pattern: /몇\s*가지\s*팁|몇\s*가지\s*방법|몇\s*가지\s*실용적인/g, category: 'cliche', weight: 1.5, label: '몇 가지 팁/방법' },
   { pattern: /소개합니다|소개해\s*드리/g, category: 'cliche', weight: 0.8, label: '소개합니다/소개해 드리' },
+  // 애드센스/블로그 특화 AI 패턴 (300개 데이터 추출 결과)
+  { pattern: /데\s*도움을/g, category: 'cliche', weight: 1.5, label: '~하는 데 도움을' },
+  { pattern: /건강을\s*위한|건강을\s*유지하는/g, category: 'cliche', weight: 1.5, label: '건강을 위한/유지하는' },
+  { pattern: /있습니다\s*이는|수\s*있습니다\s*이는/g, category: 'cliche', weight: 1.5, label: '~있습니다. 이는 (기계적 문장 연결)' },
+  { pattern: /줄\s*수\s*있습니다/g, category: 'cliche', weight: 1.0, label: '~줄 수 있습니다 (확률적 서술)' },
+  { pattern: /마지막\s*생각/g, category: 'cliche', weight: 2.0, label: '마지막 생각 (번역투 소제목)' },
+  { pattern: /중\s*하나입니다/g, category: 'cliche', weight: 1.0, label: '~중 하나입니다' },
+  { pattern: /전반적인\s*건강을/g, category: 'cliche', weight: 1.5, label: '전반적인 건강을' },
+  { pattern: /공유해\s*주세요/g, category: 'cliche', weight: 1.0, label: '공유해 주세요 (기계적 맺음말)' },
+  { pattern: /향상시킬\s*수/g, category: 'cliche', weight: 1.0, label: '향상시킬 수' },
+  { pattern: /삶의\s*질을/g, category: 'cliche', weight: 1.5, label: '삶의 질을' },
+  { pattern: /있게\s*해줍니다/g, category: 'cliche', weight: 1.0, label: '~있게 해줍니다' },
+  { pattern: /예를\s*들어/g, category: 'cliche', weight: 0.5, label: '예를 들어 (과도한 예시)' },
+  { pattern: /도움이\s*됩니다/g, category: 'cliche', weight: 1.0, label: '도움이 됩니다' },
 ];
 
 /** 2-1. 번역투 어미·조사 */
 const TRANSLATION_PATTERNS: DictionaryPattern[] = [
-  { pattern: /함에\s*있어서/g, category: 'translation', weight: 1.5, label: '~함에 있어서' },
-  { pattern: /에\s*있어\s*중요한/g, category: 'translation', weight: 1.5, label: '~에 있어 중요한' },
-  { pattern: /라는\s*점에서/g, category: 'translation', weight: 1.0, label: '~라는 점에서' },
-  { pattern: /을\s*바탕으로\s*한|를\s*바탕으로\s*한/g, category: 'translation', weight: 1.0, label: '~을 바탕으로 한' },
-  { pattern: /로\s*인한\s*결과로/g, category: 'translation', weight: 1.5, label: '~로 인한 결과로' },
-  { pattern: /됨으로써/g, category: 'translation', weight: 1.5, label: '~됨으로써' },
-  { pattern: /에\s*대하여/g, category: 'translation', weight: 0.8, label: '~에 대하여' },
-  { pattern: /의\s*일환으로/g, category: 'translation', weight: 1.0, label: '~의 일환으로' },
+  { pattern: /함에\s*있어서/g, category: 'translation', weight: 1.5, label: '~함에 있어서', ignoreInGenres: ['academic'] },
+  { pattern: /에\s*있어\s*중요한/g, category: 'translation', weight: 1.5, label: '~에 있어 중요한', ignoreInGenres: ['academic'] },
+  { pattern: /라는\s*점에서/g, category: 'translation', weight: 1.0, label: '~라는 점에서', ignoreInGenres: ['academic'] },
+  { pattern: /을\s*바탕으로\s*한|를\s*바탕으로\s*한/g, category: 'translation', weight: 1.0, label: '~을 바탕으로 한', ignoreInGenres: ['academic'] },
+  { pattern: /로\s*인한\s*결과로/g, category: 'translation', weight: 1.5, label: '~로 인한 결과로', ignoreInGenres: ['academic'] },
+  { pattern: /됨으로써/g, category: 'translation', weight: 1.5, label: '~됨으로써', ignoreInGenres: ['academic'] },
+  { pattern: /에\s*대하여/g, category: 'translation', weight: 0.8, label: '~에 대하여', ignoreInGenres: ['academic'] },
+  { pattern: /의\s*일환으로/g, category: 'translation', weight: 1.0, label: '~의 일환으로', ignoreInGenres: ['academic'] },
   { pattern: /에\s*기여합니다|에\s*기여할\s*수\s*있습니다/g, category: 'translation', weight: 1.0, label: '~에 기여합니다' },
 ];
 
 /** 2-2. 피동·당위 어미 남발 */
 const PASSIVE_PATTERNS: DictionaryPattern[] = [
-  { pattern: /하게\s*됩니다/g, category: 'passive', weight: 1.0, label: '~하게 됩니다' },
-  { pattern: /해야\s*할\s*것입니다/g, category: 'passive', weight: 1.5, label: '~해야 할 것입니다' },
-  { pattern: /인\s*것으로\s*보입니다/g, category: 'passive', weight: 1.5, label: '~인 것으로 보입니다' },
-  { pattern: /여겨집니다/g, category: 'passive', weight: 1.5, label: '~여겨집니다' },
-  { pattern: /되어집니다/g, category: 'passive', weight: 2.0, label: '~되어집니다 (이중피동)' },
-  { pattern: /라고\s*할\s*수\s*있습니다/g, category: 'passive', weight: 1.0, label: '~라고 할 수 있습니다' },
-  { pattern: /일\s*가능성이\s*있습니다/g, category: 'passive', weight: 1.0, label: '~일 가능성이 있습니다' },
-  { pattern: /것이\s*중요합니다/g, category: 'passive', weight: 1.0, label: '~것이 중요합니다 (당위)' },
-  { pattern: /해야\s*합니다/g, category: 'passive', weight: 0.8, label: '~해야 합니다 (당위)' },
-  { pattern: /필요합니다/g, category: 'passive', weight: 0.8, label: '필요합니다 (당위)' },
+  { pattern: /하게\s*됩니다/g, category: 'passive', weight: 1.0, label: '~하게 됩니다', ignoreInGenres: ['academic'] },
+  { pattern: /해야\s*할\s*것입니다/g, category: 'passive', weight: 1.5, label: '~해야 할 것입니다', ignoreInGenres: ['academic'] },
+  { pattern: /인\s*것으로\s*보입니다/g, category: 'passive', weight: 1.5, label: '~인 것으로 보입니다', ignoreInGenres: ['academic'] },
+  { pattern: /여겨집니다/g, category: 'passive', weight: 1.5, label: '~여겨집니다', ignoreInGenres: ['academic'] },
+  { pattern: /되어집니다/g, category: 'passive', weight: 2.0, label: '~되어집니다 (이중피동)', ignoreInGenres: ['academic'] },
+  { pattern: /라고\s*할\s*수\s*있습니다/g, category: 'passive', weight: 1.0, label: '~라고 할 수 있습니다', ignoreInGenres: ['academic'] },
+  { pattern: /일\s*가능성이\s*있습니다/g, category: 'passive', weight: 1.0, label: '~일 가능성이 있습니다', ignoreInGenres: ['academic'] },
+  { pattern: /것이\s*중요합니다/g, category: 'passive', weight: 1.0, label: '~것이 중요합니다 (당위)', ignoreInGenres: ['academic'] },
+  { pattern: /해야\s*합니다/g, category: 'passive', weight: 0.8, label: '~해야 합니다 (당위)', ignoreInGenres: ['academic'] },
+  { pattern: /필요합니다/g, category: 'passive', weight: 0.8, label: '필요합니다 (당위)', ignoreInGenres: ['academic'] },
 ];
 
 /** 2-3. 한자어계 접미사 과용 */
