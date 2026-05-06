@@ -562,8 +562,15 @@ export default function DashboardPage() {
                     </div>
                   )}
 
-                  <button onClick={handleImprove} disabled={isHumanizing} className="btn-primary w-full justify-center p-16 font-bold-16" style={{ borderRadius: '12px', opacity: isHumanizing ? 0.7 : 1, cursor: isHumanizing ? 'not-allowed' : 'pointer' }}>
-                    ✨ {isHumanizing ? '글을 개선하고 분석하는 중...' : (workflowState === 'improved' ? '글 다시 개선하기' : '위 설정으로 글 개선하기')}
+                  <button onClick={handleImprove} disabled={isHumanizing} className="btn-primary w-full justify-center p-16 font-bold-16" style={{ borderRadius: '12px', opacity: isHumanizing ? 0.7 : 1, cursor: isHumanizing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {isHumanizing ? (
+                      <>
+                        <div style={{ width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>
+                        글을 개선하고 분석하는 중...
+                      </>
+                    ) : (
+                      <>✨ {workflowState === 'improved' ? '글 다시 개선하기' : '위 설정으로 글 개선하기'}</>
+                    )}
                   </button>
                 </div>
               )}
@@ -600,7 +607,7 @@ export default function DashboardPage() {
                   <div className="flex-row gap-12 p-16" style={{ backgroundColor: result.score >= 81 ? '#f0fdf4' : (result.score >= 41 ? '#fffbeb' : '#fef2f2'), borderRadius: '8px' }}>
                     <div style={{ color: scoreColor, fontSize: '20px' }}>💡</div>
                     <div>
-                      <h4 className="font-bold-13 m-b-4" style={{ color: scoreColor }}>개선 엔진 리포트 (Gultong Score: {result.score}/100)</h4>
+                      <h4 className="font-bold-13 m-b-4" style={{ color: scoreColor }}>개선 엔진 리포트 ({result.score}%)</h4>
                       <p className="font-13 text-muted">{result.report}</p>
                     </div>
                   </div>

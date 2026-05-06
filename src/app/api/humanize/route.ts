@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { analyzeKoreanText } from '@/lib/korean_analyzer';
+import { getLLMVerdict } from '@/lib/llm_verdict';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
@@ -103,8 +105,7 @@ function buildSystemPrompt(options: HumanizeOptions): string {
 반드시 아래 JSON 형식으로만 응답하세요. JSON 외의 불필요한 텍스트는 금지합니다.
 {
   "improved_text": "[위 수칙이 100% 적용된 재창조 텍스트]",
-  "score": [0~100 사이의 정수. 기계적으로 98, 99점만 반복하지 마십시오. 문체의 자연스러움과 옵션 정합성을 엄격히 따져 88~99점 사이에서 현실적으로 다양하게 부여하십시오.],
-  "reason": "[해당 점수를 부여한 이유에 대해 한국어 '하십시오체(~입니다, ~습니다)'를 사용하여 차분하고 정중하게 1~2문장으로 요약하십시오. 내부 지시어는 절대로 사용하지 마십시오.]",
+  "reason": "[해당 텍스트를 어떤 의도로 개선했는지 한국어 '하십시오체(~입니다, ~습니다)'를 사용하여 차분하고 정중하게 1~2문장으로 요약하십시오. 내부 지시어는 절대로 사용하지 마십시오.]",
   "details": ["[핵심 요약 1]", "[핵심 요약 2]", "[핵심 요약 3]"]
 }
 
@@ -128,7 +129,7 @@ function parseJSONResponse(rawText: string): HumanizeResponse | null {
       if (result && result.improved_text) {
         return {
           improved_text: result.improved_text,
-          score: typeof result.score === 'number' ? result.score : 90,
+          score: 0, // 임시 점수, 나중에 실제 검사 엔진으로 덮어씌움
           reason: result.reason || '개선이 완료되었습니다.',
           details: Array.isArray(result.details) ? result.details : [],
         };
@@ -200,11 +201,10 @@ async function callGemini(options: HumanizeOptions, apiKey: string): Promise<Hum
         type: 'OBJECT',
         properties: {
           improved_text: { type: 'STRING' },
-          score: { type: 'INTEGER' },
           reason: { type: 'STRING' },
           details: { type: 'ARRAY', items: { type: 'STRING' } }
         },
-        required: ['improved_text', 'score', 'reason', 'details']
+        required: ['improved_text', 'reason', 'details']
       }
     }
   };
@@ -256,43 +256,63 @@ export async function POST(request: NextRequest) {
 
   // Fallback chain: Claude Sonnet -> Claude Haiku -> Gemini Flash
   let lastError: Error | null = null;
+  let humanizeResult: HumanizeResponse | null = null;
 
   if (claudeApiKey) {
     // 1. Claude 3.5 Sonnet
     try {
       console.log('[humanize] 시도 1: claude-3-5-sonnet-20241022');
-      const result = await callClaude(options, claudeApiKey, 'claude-3-5-sonnet-20241022');
-      return NextResponse.json(result);
+      humanizeResult = await callClaude(options, claudeApiKey, 'claude-3-5-sonnet-20241022');
     } catch (e) {
       console.error('[humanize] claude sonnet 실패:', e);
       lastError = e as Error;
     }
 
     // 2. Claude 3.5 Haiku
-    try {
-      console.log('[humanize] 시도 2: claude-3-5-haiku-20241022');
-      const result = await callClaude(options, claudeApiKey, 'claude-3-5-haiku-20241022');
-      return NextResponse.json(result);
-    } catch (e) {
-      console.error('[humanize] claude haiku 실패:', e);
-      lastError = e as Error;
+    if (!humanizeResult) {
+      try {
+        console.log('[humanize] 시도 2: claude-3-5-haiku-20241022');
+        humanizeResult = await callClaude(options, claudeApiKey, 'claude-3-5-haiku-20241022');
+      } catch (e) {
+        console.error('[humanize] claude haiku 실패:', e);
+        lastError = e as Error;
+      }
     }
   }
 
-  if (geminiApiKey) {
+  if (!humanizeResult && geminiApiKey) {
     // 3. Gemini 2.5 Flash
     try {
       console.log('[humanize] 시도 3: gemini-2.5-flash');
-      const result = await callGemini(options, geminiApiKey);
-      return NextResponse.json(result);
+      humanizeResult = await callGemini(options, geminiApiKey);
     } catch (e) {
       console.error('[humanize] gemini flash 실패:', e);
       lastError = e as Error;
     }
   }
 
-  return NextResponse.json(
-    { error: `글 개선 처리 중 모든 모델이 실패했습니다. (최종 에러: ${lastError?.message})` },
-    { status: 500 }
-  );
+  if (!humanizeResult) {
+    return NextResponse.json(
+      { error: `글 개선 처리 중 모든 모델이 실패했습니다. (최종 에러: ${lastError?.message})` },
+      { status: 500 }
+    );
+  }
+
+  // 실제 분석 엔진을 태워 신뢰도 있는 점수를 산출합니다.
+  try {
+    let genre = 'general';
+    if (options.mode.includes('에세이')) genre = 'academic';
+    else if (options.mode.includes('광고')) genre = 'creative';
+
+    const analysis = analyzeKoreanText(humanizeResult.improved_text, genre);
+    const { verdict } = await getLLMVerdict(humanizeResult.improved_text, analysis, claudeApiKey, geminiApiKey, genre);
+    
+    humanizeResult.score = verdict.humanScore;
+  } catch (error) {
+    console.error('[humanize] 검사 엔진 통과 실패:', error);
+    // 검사 엔진이 실패해도 개선 결과는 반환하되, 보수적인 기본 점수(85점)를 부여합니다.
+    humanizeResult.score = 85; 
+  }
+
+  return NextResponse.json(humanizeResult);
 }
