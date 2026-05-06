@@ -264,22 +264,22 @@ export async function POST(request: NextRequest) {
   let humanizeResult: HumanizeResponse | null = null;
 
   if (claudeApiKey) {
-    // 1. Claude 3.5 Sonnet
+    // 1. Claude Haiku 4.5 (최우선: 속도/비용 최적)
     try {
-      console.log('[humanize] 시도 1: claude-3-5-sonnet-20241022');
-      humanizeResult = await callClaude(options, claudeApiKey, 'claude-3-5-sonnet-20241022');
+      console.log('[humanize] 시도 1: claude-haiku-4-5-20251001');
+      humanizeResult = await callClaude(options, claudeApiKey, 'claude-haiku-4-5-20251001');
     } catch (e) {
-      console.error('[humanize] claude sonnet 실패:', e);
+      console.error('[humanize] claude haiku 실패:', e);
       lastError = e as Error;
     }
 
-    // 2. Claude 3 Haiku (Fallback)
+    // 2. Claude Sonnet 4.6 (Fallback)
     if (!humanizeResult) {
       try {
-        console.log('[humanize] 시도 2: claude-3-haiku-20240307');
-        humanizeResult = await callClaude(options, claudeApiKey, 'claude-3-haiku-20240307');
+        console.log('[humanize] 시도 2: claude-sonnet-4-6');
+        humanizeResult = await callClaude(options, claudeApiKey, 'claude-sonnet-4-6');
       } catch (e) {
-        console.error('[humanize] claude haiku 실패:', e);
+        console.error('[humanize] claude sonnet 실패:', e);
         lastError = e as Error;
       }
     }

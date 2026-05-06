@@ -132,7 +132,7 @@ export async function callClaudeForFinalVerdict(
   genre: string
 ): Promise<LLMResponse> {
   const systemPrompt = buildSystemPrompt(analysis, genre);
-  const model = 'claude-3-haiku-20240307'; // Claude 3 Haiku
+  const model = 'claude-haiku-4-5-20251001'; // Claude Haiku 4.5: 속도/비용 최적
 
   console.log(`[analyze] Claude 호출 시작: ${model}`);
 
