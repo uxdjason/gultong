@@ -11,6 +11,11 @@ interface HumanizeOptions {
   seriousness: number;
   emotion: number;
   honorificType: string;
+  persona?: {
+    name: string;
+    description: string;
+    exampleText?: string;
+  };
 }
 
 interface HumanizeResponse {
@@ -47,6 +52,27 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
 }
 
 function buildSystemPrompt(options: HumanizeOptions): string {
+  if (options.persona) {
+    return `당신은 다음 페르소나에 완벽하게 빙의하여 사용자의 텍스트를 재작성해야 합니다.
+
+[페르소나 프로필]
+- 성격 및 말투 설명: ${options.persona.description}
+${options.persona.exampleText ? `- 문체 모방용 예시 글:\n"${options.persona.exampleText}"` : ''}
+
+원본 텍스트의 사실적 정보는 최대한 유지하되, 모든 문장과 단어 선택, 문단의 호흡을 반드시 위 페르소나의 성격과 말투(예시 글 참고)에 맞게 100% 교체하십시오.
+기존 AI 특유의 딱딱하고 기계적인 톤이나 상투적인 표현은 단 하나도 남겨서는 안 됩니다.
+
+반드시 아래 JSON 형식으로만 응답하세요. JSON 외의 불필요한 텍스트는 금지합니다.
+{
+  "improved_text": "[위 수칙이 100% 적용된 재창조 텍스트]",
+  "reason": "[해당 텍스트를 어떤 의도로 개선했는지 한국어 '하십시오체(~입니다, ~습니다)'를 사용하여 차분하고 정중하게 1~2문장으로 요약하십시오. 내부 지시어는 절대로 사용하지 마십시오.]",
+  "details": ["[핵심 요약 1]", "[핵심 요약 2]", "[핵심 요약 3]"]
+}
+
+[details(뱃지) 작성 주의사항]
+- 페르소나의 어떤 특징을 강조했는지 사용자가 이해하기 쉬운 10자 내외의 짧은 구어로만 3개 이하로 작성하십시오.`;
+  }
+
   return `당신은 현존하는 가장 까다로운 AI 탐지기를 완벽하게 속여야 하는 20년 차 최고급 에디터입니다. 
 단순 윤문이 아니라 원본의 팩트만 남기고 텍스트를 완전히 재창조하십시오. 아래의 [극단적 인간화 4대 절대 수칙]을 하나라도 위반하면 실패입니다.
 

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 
 import type { DetectionResult } from '@/app/api/analyze/route';
+import PersonaVault from '@/components/PersonaVault';
+import { usePersonas } from '@/hooks/usePersonas';
 
 // 워크플로우 상태 정의
 type WorkflowState = 'initial' | 'inspected' | 'direct_improve' | 'improved';
@@ -57,6 +59,7 @@ const BADGE_COLORS: Record<NonNullable<DetectionResult['badge']>, string> = {
 export default function DashboardPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<'editor' | 'persona'>('editor');
   const [workflowState, setWorkflowState] = useState<WorkflowState>('initial');
   const [originalText, setOriginalText] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('general');
@@ -74,6 +77,13 @@ export default function DashboardPage() {
 
   // 개선 이력 스택
   const [resultsStack, setResultsStack] = useState<ImprovementResult[]>([]);
+
+  // 복사 알림 툴팁 상태
+  const [copyTooltip, setCopyTooltip] = useState<{visible: boolean, x: number, y: number}>({visible: false, x: 0, y: 0});
+
+  // 페르소나 상태
+  const { personas } = usePersonas();
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
 
   // 반응형 감지
   useEffect(() => {
@@ -150,7 +160,8 @@ export default function DashboardPage() {
           mode: writingMode,
           seriousness,
           emotion,
-          honorificType
+          honorificType,
+          persona: selectedPersonaId ? personas.find(p => p.id === selectedPersonaId) : undefined
         }),
       });
 
@@ -187,6 +198,14 @@ export default function DashboardPage() {
     setHumanizeError(null);
     setIsLoading(false);
     setIsHumanizing(false);
+  };
+
+  const handleCopy = async (text: string, e: React.MouseEvent) => {
+    await navigator.clipboard.writeText(text);
+    setCopyTooltip({ visible: true, x: e.clientX, y: e.clientY });
+    setTimeout(() => {
+      setCopyTooltip(prev => ({ ...prev, visible: false }));
+    }, 2000);
   };
 
   return (
@@ -227,12 +246,11 @@ export default function DashboardPage() {
             {/* 메인 메뉴 (HeaderAuth에서 이동됨) */}
             {isSidebarOpen ? (
               <div className="flex-col gap-8 m-b-24">
-                <div style={{ backgroundColor: '#f3f4f6', color: '#111827', padding: '12px 16px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }} className="font-14 flex-row items-center gap-12">
+                <div onClick={() => setActiveMenu('editor')} style={{ backgroundColor: activeMenu === 'editor' ? '#f3f4f6' : 'transparent', color: activeMenu === 'editor' ? '#111827' : '#4b5563', padding: '12px 16px', borderRadius: '8px', fontWeight: activeMenu === 'editor' ? 700 : 500, cursor: 'pointer' }} className="font-14 flex-row items-center gap-12 hover:bg-gray-50">
                   <span>📝</span> 단일 텍스트 작업
                 </div>
-                <div style={{ padding: '12px 16px', borderRadius: '8px', cursor: 'pointer' }} className="font-14 text-muted flex-row items-center justify-between hover:bg-gray-50">
+                <div onClick={() => setActiveMenu('persona')} style={{ backgroundColor: activeMenu === 'persona' ? '#f3f4f6' : 'transparent', color: activeMenu === 'persona' ? '#111827' : '#4b5563', padding: '12px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: activeMenu === 'persona' ? 700 : 500 }} className="font-14 flex-row items-center justify-between hover:bg-gray-50">
                   <div className="flex-row items-center gap-12"><span>🎭</span> 나의 페르소나 저장소</div>
-                  <span style={{ backgroundColor: '#e0e7ff', color: 'var(--primary-color)', padding: '2px 6px', borderRadius: '4px' }} className="font-11 font-bold">PRO</span>
                 </div>
                 <div style={{ padding: '12px 16px', borderRadius: '8px', cursor: 'pointer' }} className="font-14 text-muted flex-row items-center justify-between hover:bg-gray-50">
                   <div className="flex-row items-center gap-12"><span>📚</span> 대량 변환 작업</div>
@@ -241,8 +259,8 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="flex-col gap-12 m-b-24 items-center">
-                <div style={{ backgroundColor: '#f3f4f6', width: '40px', height: '40px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} title="단일 텍스트 작업">📝</div>
-                <div style={{ width: '40px', height: '40px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} className="hover:bg-gray-50" title="나의 페르소나 저장소 (PRO)">🎭</div>
+                <div onClick={() => setActiveMenu('editor')} style={{ backgroundColor: activeMenu === 'editor' ? '#f3f4f6' : 'transparent', width: '40px', height: '40px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} className="hover:bg-gray-50" title="단일 텍스트 작업">📝</div>
+                <div onClick={() => setActiveMenu('persona')} style={{ backgroundColor: activeMenu === 'persona' ? '#f3f4f6' : 'transparent', width: '40px', height: '40px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} className="hover:bg-gray-50" title="나의 페르소나 저장소">🎭</div>
                 <div style={{ width: '40px', height: '40px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} className="hover:bg-gray-50" title="대량 변환 작업 (PRO)">📚</div>
               </div>
             )}
@@ -298,6 +316,9 @@ export default function DashboardPage() {
             </button>
           )}
 
+          {activeMenu === 'persona' ? (
+            <PersonaVault />
+          ) : (
           <div className="container" style={{ maxWidth: '900px', margin: '0 auto', padding: isMobile ? '64px 20px 80px' : '40px 20px 120px' }}>
 
             <div className="flex-col gap-24">
@@ -496,7 +517,7 @@ export default function DashboardPage() {
                   <h3 className="font-bold-18" style={{ marginBottom: '10px' }}>인간처럼 글 개선하기</h3>
                   <p className="font-13 text-muted" style={{ marginBottom: '36px' }}>AI 특유의 글 쓰기 특징들을 지우고 보다 인간이 작성한 글처럼 보이도록 개선합니다.</p>
 
-                  <div className="flex-row gap-24" style={{ marginBottom: '32px' }}>
+                  <div className="flex-row gap-24" style={{ marginBottom: '32px', opacity: selectedPersonaId ? 0.4 : 1, pointerEvents: selectedPersonaId ? 'none' : 'auto' }}>
                     <div className="flex-1">
                       <label className="font-bold-13 text-muted m-b-8" style={{ display: 'block' }}>작성 모드</label>
                       <select value={writingMode} onChange={e => setWritingMode(e.target.value)} className="w-full font-14" style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', outline: 'none' }}>
@@ -516,7 +537,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', marginBottom: '36px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', marginBottom: '36px', opacity: selectedPersonaId ? 0.4 : 1, pointerEvents: selectedPersonaId ? 'none' : 'auto' }}>
                     <div>
                       <div className="flex-row justify-between m-b-8">
                         <span className="font-bold-13 text-muted">진지함 레벨</span>
@@ -542,17 +563,27 @@ export default function DashboardPage() {
                   </div>
 
                   {/* 페르소나 적용 영역 */}
-                  <div className="flex-row justify-between items-center p-16" style={{ backgroundColor: '#f3f4f6', borderRadius: '12px', marginBottom: '36px' }}>
-                    <div>
-                      <div className="flex-row items-center gap-8 m-b-4">
-                        <span className="font-bold-14">내 페르소나 적용</span>
-                        <span style={{ backgroundColor: 'var(--primary-color)', color: '#fff', padding: '2px 6px', borderRadius: '4px' }} className="font-bold-11">PRO</span>
+                  <div className="flex-col p-16" style={{ backgroundColor: selectedPersonaId ? '#e0e7ff' : '#f3f4f6', border: selectedPersonaId ? '1px solid var(--primary-color)' : '1px solid transparent', borderRadius: '12px', marginBottom: '36px', transition: 'all 0.2s' }}>
+                    <div className="flex-row justify-between items-center flex-wrap gap-12">
+                      <div>
+                        <div className="flex-row items-center gap-8 m-b-4">
+                          <span className="font-bold-14" style={{ color: selectedPersonaId ? 'var(--primary-color)' : 'inherit' }}>🎭 내 페르소나 적용</span>
+                        </div>
+                        <div className="font-12" style={{ color: selectedPersonaId ? 'var(--primary-color)' : 'var(--text-muted)' }}>페르소나를 선택하면 위의 기본 설정보다 최우선 적용됩니다.</div>
                       </div>
-                      <div className="font-12 text-muted">내 페르소나 적용 시 위 레벨 설정보다 우선순위를 가집니다.</div>
+                      
+                      <select 
+                        value={selectedPersonaId} 
+                        onChange={e => setSelectedPersonaId(e.target.value)}
+                        className="font-14" 
+                        style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff', outline: 'none', minWidth: '180px' }}
+                      >
+                        <option value="">적용 안 함 (기본 설정 사용)</option>
+                        {personas.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
                     </div>
-                    <button style={{ backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: '8px', padding: '8px 16px', color: '#9ca3af' }} className="font-bold-13">
-                      내 페르소나 사용 🔒
-                    </button>
                   </div>
 
                   {humanizeError && (
@@ -593,7 +624,7 @@ export default function DashboardPage() {
                       <span className={`badge-small ${badgeClass} font-11`}>인간 작성 확률 {result.score}%</span>
                       <span className="font-12 text-light ml-2">{result.timestamp}</span>
                     </div>
-                    <button onClick={() => navigator.clipboard.writeText(result.text)} className="flex-row items-center gap-8 text-primary font-bold-13 cursor-pointer" style={{ backgroundColor: 'transparent', padding: '4px 8px' }}>
+                    <button onClick={(e) => handleCopy(result.text, e)} className="flex-row items-center gap-8 text-primary font-bold-13 cursor-pointer" style={{ backgroundColor: 'transparent', padding: '4px 8px' }}>
                       📋 복사하기
                     </button>
                   </div>
@@ -617,8 +648,29 @@ export default function DashboardPage() {
 
             </div>
           </div>
+          )}
         </main>
       </div>
+
+      {/* 복사 완료 툴팁 */}
+      {copyTooltip.visible && (
+        <div style={{
+          position: 'fixed',
+          left: copyTooltip.x + 15,
+          top: copyTooltip.y + 15,
+          backgroundColor: '#1f2937',
+          color: '#fff',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          fontSize: '13px',
+          zIndex: 9999,
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          pointerEvents: 'none',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          ✓ 클립보드에 복사되었습니다
+        </div>
+      )}
     </div>
   );
 }
