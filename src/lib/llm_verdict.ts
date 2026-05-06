@@ -285,14 +285,16 @@ export async function getLLMVerdict(
   genre: string
 ): Promise<{ verdict: LLMResponse; provider: 'claude' | 'gemini' }> {
 
+  let lastError: Error | null = null;
+
   // 1순위: Claude
   if (claudeApiKey) {
     try {
       const verdict = await callClaudeForFinalVerdict(originalText, analysis, claudeApiKey, genre);
       return { verdict, provider: 'claude' };
     } catch (claudeError) {
-      const msg = claudeError instanceof Error ? claudeError.message : String(claudeError);
-      console.warn(`[analyze] Claude 실패, Gemini fallback 시도: ${msg}`);
+      lastError = claudeError instanceof Error ? claudeError : new Error(String(claudeError));
+      console.warn(`[analyze] Claude 실패, Gemini fallback 시도: ${lastError.message}`);
     }
   } else {
     console.warn('[analyze] CLAUDE_API_KEY 없음. Gemini로 직접 진행.');
@@ -301,6 +303,9 @@ export async function getLLMVerdict(
   // Fallback: Gemini
   if (geminiApiKey) {
     const verdict = await callGeminiForFinalVerdict(originalText, analysis, geminiApiKey, genre);
+    if (lastError) {
+      (verdict as any).debug_info = `Claude Fallback Reason: ${lastError.message}`;
+    }
     return { verdict, provider: 'gemini' };
   }
 

@@ -28,6 +28,7 @@ export interface DetectionResult {
     structuralFeatures: string;
     quantitativeInterpretation: string;
   };
+  debug_info?: string;
 }
 
 // =====================
@@ -129,6 +130,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       rawAnalysis: analysis,
       llmProvider: provider,
       stepByStepAnalysis: verdict.stepByStepAnalysis,
+      debug_info: (verdict as any).debug_info,
     };
 
     return NextResponse.json(result, { status: 200 });

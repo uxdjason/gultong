@@ -24,6 +24,7 @@ interface HumanizeResponse {
   reason: string;
   details: string[];
   provider?: string;
+  debug_info?: string;
 }
 
 async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
@@ -300,6 +301,11 @@ export async function POST(request: NextRequest) {
       { error: `글 개선 처리 중 모든 모델이 실패했습니다. (최종 에러: ${lastError?.message})` },
       { status: 500 }
     );
+  }
+
+  // 만약 Gemini로 폴백된 경우 디버그용으로 이전 에러(Claude 에러)를 전달합니다.
+  if (humanizeResult.provider?.includes('gemini') && lastError) {
+    humanizeResult.debug_info = `Claude Fallback Reason: ${lastError.message}`;
   }
 
   // 실제 분석 엔진을 태워 신뢰도 있는 점수를 산출합니다.
