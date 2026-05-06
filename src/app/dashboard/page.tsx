@@ -190,6 +190,7 @@ export default function DashboardPage() {
   };
 
   const resetWorkflow = () => {
+    setActiveMenu('editor');
     setWorkflowState('initial');
     setOriginalText('');
     setResultsStack([]);
