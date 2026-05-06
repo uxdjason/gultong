@@ -64,6 +64,14 @@ export default function DashboardPage() {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
 
+  // 개선 관련 상태
+  const [writingMode, setWritingMode] = useState<string>('블로그 (정보성 리뷰)');
+  const [honorificType, setHonorificType] = useState<string>('soft');
+  const [seriousness, setSeriousness] = useState<number>(3);
+  const [emotion, setEmotion] = useState<number>(4); // 초기값 4
+  const [isHumanizing, setIsHumanizing] = useState<boolean>(false);
+  const [humanizeError, setHumanizeError] = useState<string | null>(null);
+
   // 개선 이력 스택
   const [resultsStack, setResultsStack] = useState<ImprovementResult[]>([]);
 
@@ -128,19 +136,46 @@ export default function DashboardPage() {
     setWorkflowState('direct_improve');
   };
 
-  const handleImprove = () => {
-    // 임시 더미 데이터로 새 결과 추가
-    const newResult: ImprovementResult = {
-      id: Date.now(),
-      text: "평소 블로그 포스팅을 할 때 가장 고민되는 부분이 바로 '어투'인데요. GPT를 쓰다 보면 특유의 딱딱함 때문에 고민이 많으셨죠?\n\n이번에 소개해드릴 방법은 그런 기계적인 느낌을 싹 지워주는 꿀팁입니다. 단순히 단어를 바꾸는 게 아니라 전체적인 문장의 흐름을 구어체로 재구성하여 훨씬 자연스럽게 읽히도록 만들었습니다.",
-      score: Math.floor(Math.random() * (99 - 85) + 85), // 85~99점 사이
-      timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      report: "기존 원고의 나열식 구조를 구어체 흐름으로 재조립했습니다. 불필요한 관형사를 제거하고 문장 간의 의미적 연결성을 강화하여 검색 엔진 우회율을 극대화했습니다."
-    };
+  const handleImprove = async () => {
+    if (!originalText.trim() || isHumanizing) return;
+    setIsHumanizing(true);
+    setHumanizeError(null);
 
-    // 최신 결과가 배열의 맨 앞에 오도록 (Top-down stack)
-    setResultsStack(prev => [newResult, ...prev]);
-    setWorkflowState('improved');
+    try {
+      const response = await fetch('/api/humanize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: originalText,
+          mode: writingMode,
+          seriousness,
+          emotion,
+          honorificType
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error ?? `서버 에러 발생 (HTTP ${response.status})`);
+      }
+
+      const newResult: ImprovementResult = {
+        id: Date.now(),
+        text: data.improved_text,
+        score: data.score,
+        timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        report: data.reason
+      };
+
+      setResultsStack(prev => [newResult, ...prev]);
+      setWorkflowState('improved');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '알 수 없는 오류';
+      setHumanizeError(message);
+    } finally {
+      setIsHumanizing(false);
+    }
   };
 
   const resetWorkflow = () => {
@@ -149,7 +184,9 @@ export default function DashboardPage() {
     setResultsStack([]);
     setDetectionResult(null);
     setAnalysisError(null);
+    setHumanizeError(null);
     setIsLoading(false);
+    setIsHumanizing(false);
   };
 
   return (
@@ -462,18 +499,19 @@ export default function DashboardPage() {
                   <div className="flex-row gap-24" style={{ marginBottom: '32px' }}>
                     <div className="flex-1">
                       <label className="font-bold-13 text-muted m-b-8" style={{ display: 'block' }}>작성 모드</label>
-                      <select className="w-full font-14" style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', outline: 'none' }}>
-                        <option>블로그 (정보성 리뷰)</option>
-                        <option>에세이/칼럼</option>
-                        <option>광고/카피라이팅</option>
+                      <select value={writingMode} onChange={e => setWritingMode(e.target.value)} className="w-full font-14" style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', outline: 'none' }}>
+                        <option value="블로그 (정보성 리뷰)">블로그 (정보성 리뷰)</option>
+                        <option value="에세이/칼럼">에세이/칼럼</option>
+                        <option value="광고/카피라이팅">광고/카피라이팅</option>
                       </select>
                     </div>
                     <div className="flex-1">
                       <label className="font-bold-13 text-muted m-b-8" style={{ display: 'block' }}>존댓말 옵션</label>
-                      <select className="w-full font-14" style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', outline: 'none' }}>
-                        <option>해요체 (~해요)</option>
-                        <option>합쇼체 (~합니다)</option>
-                        <option>평어체 (~다)</option>
+                      <select value={honorificType} onChange={e => setHonorificType(e.target.value)} className="w-full font-14" style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', outline: 'none' }}>
+                        <option value="soft">해요체 (~해요)</option>
+                        <option value="formal">합쇼체 (~합니다)</option>
+                        <option value="none">평어체 (~다)</option>
+                        <option value="mixed">혼합체 (해요/합쇼)</option>
                       </select>
                     </div>
                   </div>
@@ -482,9 +520,9 @@ export default function DashboardPage() {
                     <div>
                       <div className="flex-row justify-between m-b-8">
                         <span className="font-bold-13 text-muted">진지함 레벨</span>
-                        <span className="font-bold-13 text-primary">Lv. 3</span>
+                        <span className="font-bold-13 text-primary">Lv. {seriousness}</span>
                       </div>
-                      <input type="range" min="1" max="5" defaultValue="3" className="w-full" />
+                      <input type="range" min="1" max="5" value={seriousness} onChange={e => setSeriousness(parseInt(e.target.value))} className="w-full" />
                       <div className="flex-row justify-between m-t-4">
                         <span className="font-11 text-light">캐주얼</span>
                         <span className="font-11 text-light">격식</span>
@@ -493,9 +531,9 @@ export default function DashboardPage() {
                     <div>
                       <div className="flex-row justify-between m-b-8">
                         <span className="font-bold-13 text-muted">감성/주관 레벨</span>
-                        <span className="font-bold-13 text-primary">Lv. 4</span>
+                        <span className="font-bold-13 text-primary">Lv. {emotion}</span>
                       </div>
-                      <input type="range" min="1" max="5" defaultValue="4" className="w-full" />
+                      <input type="range" min="1" max="5" value={emotion} onChange={e => setEmotion(parseInt(e.target.value))} className="w-full" />
                       <div className="flex-row justify-between m-t-4">
                         <span className="font-11 text-light">객관적</span>
                         <span className="font-11 text-light">주관적</span>
@@ -517,16 +555,26 @@ export default function DashboardPage() {
                     </button>
                   </div>
 
-                  <button onClick={handleImprove} className="btn-primary w-full justify-center p-16 font-bold-16" style={{ borderRadius: '12px' }}>
-                    ✨ {workflowState === 'improved' ? '글 다시 개선하기' : '위 설정으로 글 개선하기'}
+                  {humanizeError && (
+                    <div className="flex-row gap-12 m-b-16 p-16" style={{ backgroundColor: '#fef2f2', borderRadius: '12px', border: '1px solid #fecaca' }}>
+                      <span style={{ fontSize: '18px' }}>⚠️</span>
+                      <span className="font-14" style={{ color: '#dc2626' }}>{humanizeError}</span>
+                    </div>
+                  )}
+
+                  <button onClick={handleImprove} disabled={isHumanizing} className="btn-primary w-full justify-center p-16 font-bold-16" style={{ borderRadius: '12px', opacity: isHumanizing ? 0.7 : 1, cursor: isHumanizing ? 'not-allowed' : 'pointer' }}>
+                    ✨ {isHumanizing ? '글을 개선하고 분석하는 중...' : (workflowState === 'improved' ? '글 다시 개선하기' : '위 설정으로 글 개선하기')}
                   </button>
                 </div>
               )}
 
               {/* === Step 4 Box: 개선 결과 스택 === */}
-              {resultsStack.map((result, index) => (
+              {resultsStack.map((result, index) => {
+                const scoreColor = result.score >= 81 ? 'var(--success-color)' : (result.score >= 41 ? '#f59e0b' : '#ef4444');
+                const badgeClass = result.score >= 81 ? 'badge-success' : (result.score >= 41 ? 'badge-warning' : 'badge-danger');
+                return (
                 <div key={result.id} className="card p-24" style={{
-                  border: index === 0 ? '2px solid var(--success-color)' : '1px solid var(--border-color)',
+                  border: index === 0 ? `2px solid ${scoreColor}` : '1px solid var(--border-color)',
                   backgroundColor: '#ffffff',
                   opacity: index === 0 ? 1 : 0.7,
                   marginTop: index === 0 ? '0' : '-8px',
@@ -534,11 +582,11 @@ export default function DashboardPage() {
                 }}>
                   <div className="flex-row justify-between items-center m-b-16 pb-16" style={{ borderBottom: '1px solid #f3f4f6' }}>
                     <div className="flex-row items-center gap-12">
-                      <h3 className="font-bold-16 text-success">개선된 텍스트</h3>
-                      <span className="badge-small badge-success font-11">인간 작성 확률 99%</span>
+                      <h3 className="font-bold-16" style={{ color: scoreColor }}>개선된 텍스트</h3>
+                      <span className={`badge-small ${badgeClass} font-11`}>인간 작성 확률 {result.score}%</span>
                       <span className="font-12 text-light ml-2">{result.timestamp}</span>
                     </div>
-                    <button className="flex-row items-center gap-8 text-primary font-bold-13 cursor-pointer" style={{ backgroundColor: 'transparent', padding: '4px 8px' }}>
+                    <button onClick={() => navigator.clipboard.writeText(result.text)} className="flex-row items-center gap-8 text-primary font-bold-13 cursor-pointer" style={{ backgroundColor: 'transparent', padding: '4px 8px' }}>
                       📋 복사하기
                     </button>
                   </div>
@@ -549,15 +597,16 @@ export default function DashboardPage() {
                     </p>
                   </div>
 
-                  <div className="flex-row gap-12 p-16" style={{ backgroundColor: '#f0fdf4', borderRadius: '8px' }}>
-                    <div className="text-success" style={{ fontSize: '20px' }}>💡</div>
+                  <div className="flex-row gap-12 p-16" style={{ backgroundColor: result.score >= 81 ? '#f0fdf4' : (result.score >= 41 ? '#fffbeb' : '#fef2f2'), borderRadius: '8px' }}>
+                    <div style={{ color: scoreColor, fontSize: '20px' }}>💡</div>
                     <div>
-                      <h4 className="font-bold-13 text-success m-b-4">개선 엔진 리포트 (Gultong Score: 92/100)</h4>
+                      <h4 className="font-bold-13 m-b-4" style={{ color: scoreColor }}>개선 엔진 리포트 (Gultong Score: {result.score}/100)</h4>
                       <p className="font-13 text-muted">{result.report}</p>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
 
             </div>
           </div>
