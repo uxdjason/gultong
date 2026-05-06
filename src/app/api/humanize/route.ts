@@ -87,10 +87,10 @@ ${options.persona.exampleText ? `- 문체 모방용 예시 글:\n"${options.pers
   }
 
   prompt += `[극단적 인간화 및 형태적 절대 수칙]
-1. 문단의 극단적 파편화 (Extreme Fragmentation - 가장 중요):
-   - 내용이 바뀌거나 호흡을 고를 때마다 반드시 줄바꿈(엔터)을 하여 문단을 적극적으로 분리하십시오.
-   - 한 문단이 절대 3~4문장을 넘지 않게 하십시오. 
-   - 글 중간에 반드시 **단 한 줄(1문장)짜리 문단**을 여러 번 삽입하여 시각적 리듬감(Burstiness)을 강제로 만드십시오. 
+1. 자연스러운 문단 구성 (Natural Paragraphing - 가장 중요):
+   - 문장 하나당 무조건 줄바꿈을 하는 등 과도한 파편화를 피하십시오.
+   - 문맥과 의미 흐름에 따라 2~4개의 문장을 묶어 하나의 자연스러운 문단으로 구성하십시오.
+   - 너무 긴 벽돌 문단은 피하고, 시각적 리듬감을 위해 가끔씩 강조용 단 한 줄(1문장)짜리 문단을 섞어주십시오.
    - 마크다운 헤딩이나 리스트 기호는 절대 쓰지 마십시오.
 
 2. 기계적 접속사 및 도입부 절대 금지:
@@ -272,11 +272,11 @@ export async function POST(request: NextRequest) {
       lastError = e as Error;
     }
 
-    // 2. Claude 3.5 Haiku
+    // 2. Claude 3 Haiku (Fallback)
     if (!humanizeResult) {
       try {
-        console.log('[humanize] 시도 2: claude-3-5-haiku-20241022');
-        humanizeResult = await callClaude(options, claudeApiKey, 'claude-3-5-haiku-20241022');
+        console.log('[humanize] 시도 2: claude-3-haiku-20240307');
+        humanizeResult = await callClaude(options, claudeApiKey, 'claude-3-haiku-20240307');
       } catch (e) {
         console.error('[humanize] claude haiku 실패:', e);
         lastError = e as Error;
