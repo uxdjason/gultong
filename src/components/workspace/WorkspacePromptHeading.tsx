@@ -18,7 +18,7 @@ export default function WorkspacePromptHeading() {
   return (
     <h1
       className="font-myungjo font-normal text-text-primary text-center"
-      style={{ fontSize: 24, lineHeight: '32px' }}
+      style={{ fontSize: 28, lineHeight: '40px', letterSpacing: '-0.01em' }}
     >
       {headingText}
     </h1>

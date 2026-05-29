@@ -11,20 +11,22 @@ const FEATURES: FeatureId[] = [
   'humanize',
 ];
 
+interface FeatureMenuChipProps {
+  /** true일 때: 콘텐츠 흐름 안에서 가로 중앙 정렬 (기본 상태) */
+  inline?: boolean;
+}
+
 /**
- * FeatureMenuChip × 6 — Figma 수치
- * height: 32px, border-radius: 4px (rounded-sm)
- * border: 0.5px solid rgba(70,48,17,0.2)
- * font: 12px, color: text-text-secondary
- * 선택 상태: brand.ink 배경, text-text-inverse
+ * FeatureMenuChip × 6
+ * Figma 기준: 가로로 한 줄, 칩 높이 32px, border-radius 4px, border 0.5px
+ * 메인 콘텐츠 흐름 안에 배치 (sticky 아님)
  */
-export default function FeatureMenuChip() {
+export default function FeatureMenuChip({ inline = false }: FeatureMenuChipProps) {
   const { selectedFeature, setSelectedFeature, clearStreamBlocks, setInputValue } =
     useWorkspaceStore();
 
   const handleClick = (featureId: FeatureId) => {
     if (selectedFeature === featureId) {
-      // 같은 칩 재클릭 시 선택 해제
       setSelectedFeature(null);
       clearStreamBlocks();
       setInputValue('');
@@ -37,13 +39,9 @@ export default function FeatureMenuChip() {
 
   return (
     <div
-      className="flex items-center gap-2 px-6 bg-surface-main"
-      style={{
-        paddingTop: 12,
-        paddingBottom: 12,
-        borderBottom: '0.5px solid rgba(70, 48, 17, 0.2)',
-        flexWrap: 'wrap',
-      }}
+      className={`flex items-center flex-wrap gap-2 ${inline ? 'justify-center' : ''}`}
+      role="radiogroup"
+      aria-label="글 작업 기능 선택"
     >
       {FEATURES.map((featureId) => {
         const { label } = FEATURE_META[featureId];
@@ -54,13 +52,16 @@ export default function FeatureMenuChip() {
             key={featureId}
             id={`feature-chip-${featureId}`}
             onClick={() => handleClick(featureId)}
-            className="font-myungjo text-[12px] transition-all duration-150 hover:opacity-80 flex items-center justify-center px-3"
+            className="font-myungjo transition-all duration-150 hover:opacity-75 flex items-center justify-center"
             style={{
               height: 32,
+              paddingLeft: 16,
+              paddingRight: 16,
               borderRadius: 4,
               border: '0.5px solid rgba(70, 48, 17, 0.2)',
               backgroundColor: isSelected ? '#490D0E' : 'transparent',
               color: isSelected ? '#FEFEFE' : '#505050',
+              fontSize: 14,
               whiteSpace: 'nowrap',
             }}
             role="radio"
