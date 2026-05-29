@@ -1,31 +1,24 @@
-import './globals.css'
-import type { Metadata } from 'next'
-import { Noto_Sans_KR } from 'next/font/google'
-
-const notoSansKr = Noto_Sans_KR({
-  subsets: ['latin'],
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
-  display: 'swap',
-})
+import './globals.css';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '글통 (Gultong) - SEO 안전 보장 한국어 텍스트 휴머나이저',
-  description: '검색 엔진의 AI 탐지를 피하고 당신만의 문체로 재조립하는 한국어 AI 글쓰기 윤문 서비스',
+  title: '글통 (Gultong) - 수익형 글쓰기 AI 파트너',
+  description: '키워드 찾기부터 글 생성, AI 탐지 검사, 윤문까지 — 돈 되는 글을 한 화면에서 완결합니다.',
   icons: {
-    icon: '/images/gultong_favicon_260416.png',
-  }
-}
+    icon: '/images/gultong_favicon_260515.png',
+  },
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="ko">
-      <body className={notoSansKr.className}>
+    <html lang="ko" className="h-full">
+      <body className="font-myungjo h-full">
         {children}
       </body>
     </html>
-  )
+  );
 }
