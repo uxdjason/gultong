@@ -30,8 +30,7 @@ export default function WorkspaceShell({
   const { } = useWorkspaceStore();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface-main">
-      {/* ── 사이드바 (collapsed 시 56px narrow mode) ── */}
+    <div className="body-workspace">
       <Sidebar
         userEmail={userEmail}
         userPlan={userPlan}
@@ -42,9 +41,7 @@ export default function WorkspaceShell({
         onPersona={() => {}}
         onSettingsClick={() => {}}
       />
-
-      {/* ── 메인 영역 ── */}
-      <div className="flex flex-col flex-1 overflow-hidden min-w-0">
+      <div className="main">
         <TopBar
           creditBalance={creditBalance}
           onChargeClick={() => {}}

@@ -1,0 +1,457 @@
+@font-face {
+  font-family: Kimjungchulmyungjo;
+  src: url('../fonts/KimjungchulMyungjo-Regular.woff2') format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Kimjungchulmyungjo;
+  src: url('../fonts/KimjungchulMyungjo-Light.woff2') format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Kimjungchulmyungjo;
+  src: url('../fonts/KimjungchulMyungjo-Bold.woff2') format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg-color-default: #f9f9fb;
+  --text-primary: #333;
+  --border-line-default: #46301133;
+  --bg-color-sidebar: #f8f8fa;
+  --text-button-label: #505050;
+  --brand: #490d0e;
+  --bg-white: white;
+  --text-light: #737373;
+}
+
+body {
+  color: #333;
+  font-family: Arial, Helvetica Neue, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.utility-page-wrap {
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  max-width: 100%;
+  height: 100vh;
+  max-height: 100%;
+  display: flex;
+}
+
+.utility-page-content {
+  text-align: center;
+  flex-direction: column;
+  width: 260px;
+  display: flex;
+}
+
+.utility-page-form {
+  flex-direction: column;
+  align-items: stretch;
+  display: flex;
+}
+
+.body-workspace {
+  background-color: var(--bg-color-default);
+  color: var(--text-primary);
+  flex-flow: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+  font-family: Kimjungchulmyungjo, Georgia, sans-serif;
+  display: flex;
+}
+
+.main-text-block {
+  font-size: 24px;
+  line-height: 32px;
+  display: block;
+}
+
+.sidebar {
+  border-right: .5px solid var(--border-line-default);
+  background-color: var(--bg-color-sidebar);
+  flex-flow: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  min-width: 300px;
+  max-width: 300px;
+  height: 100vh;
+  display: block;
+  overflow: hidden;
+}
+
+.logo-brand {
+  grid-column-gap: 16px;
+  grid-row-gap: 16px;
+  justify-content: flex-start;
+  align-items: center;
+  display: flex;
+}
+
+.sidebar-bottom {
+  border-top: .5px solid var(--border-line-default);
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding-top: 16px;
+  display: flex;
+}
+
+.sidebar-bottom.collapsed {
+  grid-column-gap: 16px;
+  grid-row-gap: 16px;
+  flex-flow: column;
+  justify-content: flex-start;
+  display: flex;
+}
+
+.logo-and-close {
+  justify-content: space-between;
+  align-items: center;
+  display: flex;
+}
+
+.logo-image {
+  width: 40px;
+}
+
+.logo-image.small {
+  width: 24px;
+  margin-bottom: 2.5px;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.link-icon {
+  color: var(--text-button-label);
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+}
+
+.link-icon:hover {
+  color: var(--brand);
+}
+
+.link-icon.sidebar-icon {
+  cursor: ew-resize;
+}
+
+.sidebar-menus {
+  grid-column-gap: 16px;
+  grid-row-gap: 16px;
+  flex-flow: column;
+  align-items: flex-start;
+  display: flex;
+}
+
+.profile-section {
+  grid-column-gap: 16px;
+  grid-row-gap: 16px;
+  display: flex;
+}
+
+.profile-photo {
+  background-color: var(--text-primary);
+  border-radius: 48px;
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  display: flex;
+}
+
+.profile-photo-text {
+  color: var(--bg-white);
+  font-size: 16px;
+}
+
+.profile-link-text {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.profile-link-text:hover {
+  color: var(--brand);
+}
+
+.spacer-40 {
+  height: 0;
+  margin-top: 40px;
+}
+
+.sidebar-padding {
+  flex-flow: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  display: flex;
+}
+
+.sidebar-menu {
+  grid-column-gap: 8px;
+  grid-row-gap: 8px;
+  color: var(--text-primary);
+  justify-content: flex-start;
+  align-items: center;
+  font-size: 16px;
+  line-height: 24px;
+  text-decoration: none;
+  display: flex;
+}
+
+.sidebar-menu:hover {
+  color: var(--brand);
+}
+
+.svg-icon-24 {
+  font-size: 24px;
+  line-height: 20px;
+}
+
+.sidebar-fixed, .sidebar-previous {
+  grid-column-gap: 12px;
+  grid-row-gap: 12px;
+  flex-flow: column;
+  align-items: flex-start;
+  display: flex;
+}
+
+.spacer-24 {
+  height: 0;
+  margin-top: 24px;
+}
+
+.previous-heading {
+  grid-column-gap: 4px;
+  grid-row-gap: 4px;
+  color: var(--text-button-label);
+  align-items: center;
+  line-height: 24px;
+  display: flex;
+}
+
+.fixed-heading {
+  grid-column-gap: 4px;
+  grid-row-gap: 4px;
+  color: var(--text-button-label);
+  flex-flow: row;
+  justify-content: flex-start;
+  align-items: center;
+  line-height: 24px;
+  display: flex;
+}
+
+.code-embed-2 {
+  font-size: 20px;
+  line-height: 20px;
+}
+
+.menu-text-truncated {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.top-bar {
+  border-bottom: .5px solid var(--border-line-default);
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 16px;
+  display: flex;
+  position: absolute;
+  inset: 0% 0% auto auto;
+}
+
+.credit-section {
+  grid-column-gap: 8px;
+  grid-row-gap: 8px;
+  color: var(--text-primary);
+  justify-content: flex-start;
+  align-items: center;
+  line-height: 18px;
+  display: flex;
+}
+
+.top-bar-right {
+  grid-column-gap: 24px;
+  grid-row-gap: 24px;
+  align-items: center;
+  display: flex;
+}
+
+.main {
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  position: relative;
+}
+
+.text-block-3 {
+  color: var(--text-button-label);
+  line-height: 18px;
+}
+
+.button {
+  color: var(--text-button-label);
+  font-size: 12px;
+  line-height: 12px;
+}
+
+.button-2 {
+  background-color: #0000;
+}
+
+.button-default {
+  border: 1px solid var(--border-line-default);
+  color: var(--text-button-label);
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 14px;
+  text-decoration: none;
+}
+
+.button-default:hover {
+  background-color: var(--brand);
+  color: var(--bg-white);
+}
+
+.main-block-default {
+  grid-column-gap: 32px;
+  grid-row-gap: 32px;
+  flex-flow: column;
+  align-items: center;
+  margin-left: 32px;
+  margin-right: 32px;
+  display: flex;
+}
+
+.menu-container {
+  grid-column-gap: 16px;
+  grid-row-gap: 16px;
+  flex-flow: wrap;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+.text-area-container {
+  border: .5px solid var(--border-line-default);
+  background-color: var(--bg-white);
+  width: 100%;
+  height: 160px;
+  -webkit-backdrop-filter: drop-shadow(0px 0px 4px var(--border-line-default));
+  backdrop-filter: drop-shadow(0px 0px 4px var(--border-line-default));
+  border-radius: 16px;
+  flex-flow: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px;
+  font-size: 16px;
+  line-height: 24px;
+  display: flex;
+}
+
+.text-block-4 {
+  color: var(--text-light);
+}
+
+.sidebar-default {
+  height: 100%;
+  display: block;
+}
+
+.sidebar-collapsed {
+  height: 100%;
+  display: none;
+}
+
+.spacer-16 {
+  height: 0;
+  margin-top: 16px;
+}
+
+.sidebar-icon {
+  color: var(--text-button-label);
+  cursor: ew-resize;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  text-decoration: none;
+  display: flex;
+}
+
+.sidebar-icon:hover {
+  color: var(--brand);
+}
+
+.svg-icon-sidebar-collapsed {
+  display: none;
+}
+
+.top-bar-button {
+  border: 1px solid var(--border-line-default);
+  color: var(--text-button-label);
+  border-radius: 4px;
+  padding: 8px 16px;
+  line-height: 14px;
+  text-decoration: none;
+}
+
+.top-bar-button:hover {
+  background-color: var(--brand);
+  color: var(--bg-white);
+}
+
+@media screen and (max-width: 767px) {
+  .top-bar-button {
+    display: none;
+  }
+}
+
+
+@font-face {
+  font-family: 'Kimjungchulmyungjo';
+  src: url('../fonts/KimjungchulMyungjo-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kimjungchulmyungjo';
+  src: url('../fonts/KimjungchulMyungjo-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kimjungchulmyungjo';
+  src: url('../fonts/KimjungchulMyungjo-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

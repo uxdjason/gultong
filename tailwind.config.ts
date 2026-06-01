@@ -33,7 +33,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        myungjo: ['KimjungchulMyungjo', 'Noto Serif KR', 'serif'],
+        myungjo: ['KimjungchulMyungjo', 'Nanum Myeongjo', 'Noto Serif KR', 'serif'],
       },
       borderRadius: {
         sm: '4px',
