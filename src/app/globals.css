@@ -61,9 +61,11 @@ body {
 /* Tailwind preflight overrides to match Webflow defaults */
 img {
   display: inline-block;
+  vertical-align: middle;
 }
 svg {
   display: inline;
+  vertical-align: baseline;
 }
 
 #__next {
@@ -295,7 +297,7 @@ h3 { font-size: 1.5rem; font-weight: 600; }
 
 /* ===== Webflow Prototype Overrides & Animations ===== */
 /* Webflow의 기본 폰트(Arial)가 만들어내는 baseline 간격을 동일하게 구현하기 위해 아이콘 컨테이너 폰트를 Arial로 강제 */
-.svg-icon-24, .svg-icon-sidebar, .svg-icon-sidebar-collapsed {
+.svg-icon-24, .svg-icon-sidebar, .svg-icon-sidebar-collapsed, .code-embed-2 {
   font-family: Arial, sans-serif !important;
 }
 
