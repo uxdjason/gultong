@@ -52,8 +52,18 @@ html {
 body {
   height: 100%;
   font-family: 'Kimjungchulmyungjo', 'Nanum Myeongjo', 'Noto Serif KR', serif;
+  font-size: 14px;
+  line-height: 20px;
   color: #333333;
   background-color: #F9F9FB;
+}
+
+/* Tailwind preflight overrides to match Webflow defaults */
+img {
+  display: inline-block;
+}
+svg {
+  display: inline;
 }
 
 #__next {
@@ -284,16 +294,28 @@ h3 { font-size: 1.5rem; font-weight: 600; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* ===== Webflow Prototype Overrides & Animations ===== */
-/* 사이드바 확장 버튼 마우스 호버 효과 시 아이콘 밀림 현상 방지용 margin-bottom */
-.logo-image.small {
-  margin-bottom: 2.5px;
+/* Webflow의 기본 폰트(Arial)가 만들어내는 baseline 간격을 동일하게 구현하기 위해 아이콘 컨테이너 폰트를 Arial로 강제 */
+.svg-icon-24, .svg-icon-sidebar, .svg-icon-sidebar-collapsed {
+  font-family: Arial, sans-serif !important;
 }
-/* 사이드바 확장 버튼 마우스 호버 효과 */
+
+/* 사이드바 확장 버튼 마우스 호버 효과 및 점프(밀림) 현상 완벽 방지 */
+.sidebar-icon {
+  height: 24px !important; /* a 태그 자체의 높이를 24px로 고정하여 내부 자식 교체시 높이 변화 방지 */
+  overflow: visible;
+}
+.logo-image.small {
+  margin-bottom: 0 !important; /* 불필요한 마진 제거 */
+  height: 24px !important;
+}
 #sidebar-expand-btn:hover .logo-image.small {
   display: none !important;
 }
 #sidebar-expand-btn:hover .svg-icon-sidebar-collapsed {
-  display: block !important;
+  display: flex !important; /* flex로 변경하여 내부 svg 중앙정렬 */
+  align-items: center;
+  justify-content: center;
+  height: 24px;
 }
 /* flexbox gap 호환성 패치 (grid-row-gap 대신 최신 gap 속성 지원 보장) */
 .sidebar-menus, .profile-section {
