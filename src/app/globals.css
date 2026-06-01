@@ -284,6 +284,10 @@ h3 { font-size: 1.5rem; font-weight: 600; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* ===== Webflow Prototype Overrides & Animations ===== */
+/* 사이드바 확장 버튼 마우스 호버 효과 시 아이콘 밀림 현상 방지용 margin-bottom */
+.logo-image.small {
+  margin-bottom: 2.5px;
+}
 /* 사이드바 확장 버튼 마우스 호버 효과 */
 #sidebar-expand-btn:hover .logo-image.small {
   display: none !important;
@@ -294,6 +298,9 @@ h3 { font-size: 1.5rem; font-weight: 600; }
 /* flexbox gap 호환성 패치 (grid-row-gap 대신 최신 gap 속성 지원 보장) */
 .sidebar-menus, .profile-section {
   gap: 16px;
+}
+.sidebar-fixed, .sidebar-previous {
+  gap: 12px;
 }
 .sidebar-menu {
   gap: 8px;

@@ -29,13 +29,7 @@ export default function InputArea({ onSubmit }: InputAreaProps) {
   );
 
   return (
-    <div 
-      className="text-area-container" 
-      style={{
-        opacity: isDisabled ? 0.5 : 1,
-        transition: 'opacity 0.2s',
-      }}
-    >
+    <div className="text-area-container">
       <textarea
         ref={textareaRef}
         value={inputValue}
@@ -44,7 +38,7 @@ export default function InputArea({ onSubmit }: InputAreaProps) {
         disabled={isDisabled}
         placeholder={placeholder}
         rows={4}
-        className="workspace-input text-block-4"
+        className="workspace-input"
         style={{
           border: 'none',
           backgroundColor: 'transparent',
@@ -56,20 +50,18 @@ export default function InputArea({ onSubmit }: InputAreaProps) {
         aria-label="글 작업 입력"
       />
 
-      <div style={{ alignSelf: 'flex-end' }}>
-        <button
-          className="link-icon w-inline-block"
-          onClick={() => {}}
-          type="button"
-          aria-label="파일 첨부"
-        >
-          <div className="svg-icon-24 w-embed">
-            <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 -960 960 960" width="1em" fill="currentColor">
-              <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"></path>
-            </svg>
-          </div>
-        </button>
-      </div>
+      <a
+        href="#"
+        className="link-icon w-inline-block"
+        onClick={(e) => { e.preventDefault(); }}
+        aria-label="파일 첨부"
+      >
+        <div className="svg-icon-24 w-embed">
+          <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 -960 960 960" width="1em" fill="currentColor">
+            <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"></path>
+          </svg>
+        </div>
+      </a>
     </div>
   );
 }
