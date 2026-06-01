@@ -6,27 +6,27 @@
 /* InputArea textarea placeholder 색상 */
 .workspace-input::placeholder {
   color: #737373;
-  font-family: 'KimjungchulMyungjo', 'Nanum Myeongjo', 'Noto Serif KR', serif;
+  font-family: 'Kimjungchulmyungjo', 'Nanum Myeongjo', 'Noto Serif KR', serif;
   font-size: 16px;
 }
 
-/* ===== KimjungchulMyungjo Web Font ===== */
+/* ===== Kimjungchulmyungjo Web Font ===== */
 @font-face {
-  font-family: 'KimjungchulMyungjo';
+  font-family: 'Kimjungchulmyungjo';
   src: url('/fonts/KimjungchulMyungjo-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'KimjungchulMyungjo';
+  font-family: 'Kimjungchulmyungjo';
   src: url('/fonts/KimjungchulMyungjo-Bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'KimjungchulMyungjo';
+  font-family: 'Kimjungchulmyungjo';
   src: url('/fonts/KimjungchulMyungjo-Light.woff2') format('woff2');
   font-weight: 300;
   font-style: normal;
@@ -45,15 +45,15 @@
 html {
   scroll-behavior: smooth;
   height: 100%;
+  -webkit-font-smoothing: auto !important;
+  -moz-osx-font-smoothing: auto !important;
 }
 
 body {
   height: 100%;
-  font-family: 'KimjungchulMyungjo', 'Nanum Myeongjo', 'Noto Serif KR', serif;
+  font-family: 'Kimjungchulmyungjo', 'Nanum Myeongjo', 'Noto Serif KR', serif;
   color: #333333;
   background-color: #F9F9FB;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 #__next {
@@ -282,3 +282,63 @@ h3 { font-size: 1.5rem; font-weight: 600; }
 .avatar { width: 36px; height: 36px; border-radius: 50%; background-color: #e5e7eb; cursor: pointer; }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ===== Webflow Prototype Overrides & Animations ===== */
+/* 사이드바 확장 버튼 마우스 호버 효과 */
+#sidebar-expand-btn:hover .logo-image.small {
+  display: none !important;
+}
+#sidebar-expand-btn:hover .svg-icon-sidebar-collapsed {
+  display: block !important;
+}
+/* flexbox gap 호환성 패치 (grid-row-gap 대신 최신 gap 속성 지원 보장) */
+.sidebar-menus, .profile-section {
+  gap: 16px;
+}
+.sidebar-menu {
+  gap: 8px;
+}
+.main-block-default {
+  gap: 32px;
+}
+
+/* 기본 부드러운 애니메이션 및 사이드바 설정 (데스크탑용) */
+.sidebar {
+  transition: min-width 0.2s ease, max-width 0.2s ease;
+  overflow: hidden;
+}
+.sidebar-default {
+  transition: transform 0.2s ease;
+  transform: translateX(0%);
+  width: 300px;
+  flex-shrink: 0;
+}
+/* 텍스트 요소들 줄바꿈 방지 및 투명도 애니메이션 */
+.logo-text, 
+.sidebar-menu-text, 
+.sidebar-subheading, 
+.menu-text-truncated, 
+.profile-link-text, 
+.profile-membership-text {
+  white-space: nowrap; 
+  transition: opacity 0.1s ease; 
+  opacity: 1; 
+}
+/* 타블렛 및 모바일 환경 (화면 너비 991px 이하) 강제 설정 */
+@media screen and (max-width: 991px) {
+  .sidebar {
+    min-width: 56px !important;
+    max-width: 56px !important;
+  }
+  .sidebar-default {
+    display: none !important;
+  }
+  .sidebar-collapsed {
+    display: block !important;
+  }
+  /* 확장 버튼의 호버 효과 및 클릭 이벤트 전면 차단 */
+  #sidebar-expand-btn {
+    pointer-events: none !important;
+    cursor: default !important;
+  }
+}

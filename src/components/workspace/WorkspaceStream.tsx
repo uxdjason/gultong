@@ -18,7 +18,7 @@ export default function WorkspaceStream() {
   const isEmpty = streamBlocks.length === 0;
 
   return (
-    <div className="main-block-default overflow-y-auto w-full h-full">
+    <div className="main-block-default">
       <div className="main-text-block">어떤 글 작업을 새로 시작할까요?</div>
       
       <div className="menu-container">

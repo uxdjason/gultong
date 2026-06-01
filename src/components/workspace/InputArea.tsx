@@ -34,9 +34,6 @@ export default function InputArea({ onSubmit }: InputAreaProps) {
       style={{
         opacity: isDisabled ? 0.5 : 1,
         transition: 'opacity 0.2s',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
       }}
     >
       <textarea
@@ -47,17 +44,19 @@ export default function InputArea({ onSubmit }: InputAreaProps) {
         disabled={isDisabled}
         placeholder={placeholder}
         rows={4}
-        className="workspace-input w-full resize-none bg-transparent outline-none"
+        className="workspace-input text-block-4"
         style={{
           border: 'none',
-          padding: '24px 24px 64px 24px',
+          backgroundColor: 'transparent',
+          resize: 'none',
+          outline: 'none',
           width: '100%',
           flexGrow: 1,
         }}
         aria-label="글 작업 입력"
       />
 
-      <div style={{ position: 'absolute', bottom: '16px', right: '16px', display: 'flex', gap: '8px' }}>
+      <div style={{ alignSelf: 'flex-end' }}>
         <button
           className="link-icon w-inline-block"
           onClick={() => {}}

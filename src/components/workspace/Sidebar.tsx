@@ -97,6 +97,7 @@ export default function Sidebar({
               </div>
               <a 
                 href="#" 
+                id="sidebar-collapse-btn"
                 className="sidebar-icon w-inline-block"
                 onClick={(e) => { e.preventDefault(); setSidebarCollapsed(true); }}
               >
@@ -211,6 +212,7 @@ export default function Sidebar({
           <div className="sidebar-top">
             <a 
               href="#" 
+              id="sidebar-expand-btn"
               className="sidebar-icon w-inline-block"
               onClick={(e) => { e.preventDefault(); setSidebarCollapsed(false); }}
             >
