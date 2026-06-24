@@ -102,12 +102,12 @@ ${genreInstruction}
 }`;
 }
 
-export function parseJSONResponse(rawText: string): LLMResponse | null {
+export function parseJSONGeneric<T>(rawText: string): T | null {
   const attempts = [
     () => JSON.parse(rawText),
-    () => JSON.parse(rawText.replace(/```json|```/g, '').trim()),
+    () => JSON.parse(rawText.replace(/```json|```/gi, '').trim()),
     () => {
-      const match = rawText.match(/\\{[\\s\\S]*\\}/);
+      const match = rawText.match(/\{[\s\S]*\}/);
       return match ? JSON.parse(match[0]) : null;
     }
   ];
@@ -115,12 +115,18 @@ export function parseJSONResponse(rawText: string): LLMResponse | null {
   for (const attempt of attempts) {
     try {
       const result = attempt();
-      if (result && typeof result.humanScore === 'number') {
-        return result as LLMResponse;
-      }
+      if (result) return result as T;
     } catch {
       // 다음 파싱 방법 시도
     }
+  }
+  return null;
+}
+
+export function parseJSONResponse(rawText: string): LLMResponse | null {
+  const result = parseJSONGeneric<any>(rawText);
+  if (result && typeof result.humanScore === 'number') {
+    return result as LLMResponse;
   }
   return null;
 }
@@ -228,10 +234,7 @@ export async function callGeminiForFinalVerdict(
         },
         required: ['stepByStepAnalysis', 'humanScore', 'summary']
       },
-      maxOutputTokens: 1024,
-      thinkingConfig: {
-        thinkingBudget: 0
-      }
+      maxOutputTokens: 1024
     }
   };
 

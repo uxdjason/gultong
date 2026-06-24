@@ -38,13 +38,14 @@ export const FEATURE_META: Record<FeatureId, { label: string; placeholder: strin
 };
 
 // 스트림 블록 타입 (§4.7 세로 스크롤 모델)
-export type BlockType = 'input' | 'chipgroup' | 'result' | 'loading';
+export type BlockType = 'input' | 'chipgroup' | 'result' | 'loading' | 'error';
 
 export interface StreamBlock {
   id: string;
   type: BlockType;
   featureId: FeatureId;
   content?: string;
+  payload?: unknown;
   turn: number;
 }
 
@@ -66,6 +67,8 @@ interface WorkspaceState {
   inProgressJob: InProgressJob | null;
   // 사이드바 접힘 여부 (태블릿/모바일)
   sidebarCollapsed: boolean;
+  // 다음 기능으로 넘겨줄 키워드
+  prefillKeyword: string | null;
 
   // Actions
   setSelectedFeature: (featureId: FeatureId | null) => void;
@@ -75,6 +78,8 @@ interface WorkspaceState {
   setSidebarCollapsed: (collapsed: boolean) => void;
   setInProgressJob: (job: InProgressJob | null) => void;
   resetWorkspace: () => void;
+  setPrefillKeyword: (keyword: string | null) => void;
+  startFeatureWithKeyword: (featureId: FeatureId, keyword: string) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set) => ({
@@ -83,6 +88,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   inputValue: '',
   inProgressJob: null,
   sidebarCollapsed: false,
+  prefillKeyword: null,
 
   setSelectedFeature: (featureId) =>
     set({ selectedFeature: featureId, inputValue: '' }),
@@ -104,5 +110,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
       streamBlocks: [],
       inputValue: '',
       inProgressJob: null,
+      prefillKeyword: null,
     }),
+
+  setPrefillKeyword: (keyword) => set({ prefillKeyword: keyword }),
+
+  startFeatureWithKeyword: (featureId, keyword) =>
+    set({ selectedFeature: featureId, prefillKeyword: keyword, inputValue: '' }),
 }));

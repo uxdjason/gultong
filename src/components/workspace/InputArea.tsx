@@ -12,24 +12,26 @@ export default function InputArea({ onSubmit }: InputAreaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const isDisabled = !selectedFeature;
-  const placeholder = selectedFeature
-    ? FEATURE_META[selectedFeature].placeholder
-    : '메뉴 선택을 먼저 해주세요.';
+  const placeholder = '분석할 시드 키워드를 입력해 주세요.';
+
+  const submit = useCallback(() => {
+    if (inputValue.trim() && onSubmit && !isDisabled) {
+      onSubmit(inputValue.trim());
+    }
+  }, [inputValue, onSubmit, isDisabled]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
         e.preventDefault();
-        if (inputValue.trim() && onSubmit) {
-          onSubmit(inputValue.trim());
-        }
+        submit();
       }
     },
-    [inputValue, onSubmit]
+    [submit]
   );
 
   return (
-    <div className="text-area-container">
+    <div className="text-area-container" style={{ position: 'relative' }}>
       <textarea
         ref={textareaRef}
         value={inputValue}
@@ -37,8 +39,8 @@ export default function InputArea({ onSubmit }: InputAreaProps) {
         onKeyDown={handleKeyDown}
         disabled={isDisabled}
         placeholder={placeholder}
-        rows={4}
-        className="workspace-input"
+        rows={3}
+        className="workspace-input py-4 pr-14"
         style={{
           border: 'none',
           backgroundColor: 'transparent',
@@ -46,22 +48,25 @@ export default function InputArea({ onSubmit }: InputAreaProps) {
           outline: 'none',
           width: '100%',
           flexGrow: 1,
+          minHeight: '80px',
         }}
         aria-label="글 작업 입력"
       />
 
-      <a
-        href="#"
-        className="link-icon w-inline-block"
-        onClick={(e) => { e.preventDefault(); }}
-        aria-label="파일 첨부"
+      <button
+        onClick={(e) => { e.preventDefault(); submit(); }}
+        disabled={isDisabled || !inputValue.trim()}
+        className={`absolute right-4 bottom-4 w-8 h-8 rounded flex items-center justify-center transition-colors ${
+          !isDisabled && inputValue.trim() 
+            ? 'bg-brand-ink text-white hover:bg-brand-ink/90' 
+            : 'bg-surface-divider/20 text-text-tertiary cursor-not-allowed'
+        }`}
+        aria-label="제출"
       >
-        <div className="svg-icon-24 w-embed">
-          <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 -960 960 960" width="1em" fill="currentColor">
-            <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"></path>
-          </svg>
-        </div>
-      </a>
+        <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor">
+          <path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"/>
+        </svg>
+      </button>
     </div>
   );
 }
