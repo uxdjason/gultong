@@ -272,53 +272,68 @@ export async function fetchMetrics(
     naverClientId, naverClientSecret
   } = options;
 
+  const combined: Record<string, ExtendedKeywordMetrics> = {};
+  let missingKeywords: string[] = [];
+
   if (naverSaCustomerId && naverSaAccessLicence && naverSaSecretKey && naverClientId && naverClientSecret) {
     try {
       const saResults = await fetchNaverSaMetrics(keywords, naverSaCustomerId, naverSaAccessLicence, naverSaSecretKey);
       const datalabResults = await fetchNaverDatalabTrend(keywords, naverClientId, naverClientSecret);
       
-      const combined: Record<string, ExtendedKeywordMetrics> = {};
       for (const kw of keywords) {
-        const sa = saResults[kw] || { searchVolume: 10, searchVolumePc: 5, searchVolumeMobile: 5, competition: '보통' as Competition };
-        const dl = datalabResults[kw] || { trendScore: 50, trendDirection: '유지' as Trend };
-        combined[kw] = {
-          ...sa,
-          ...dl,
-          source: 'naver'
-        };
+        if (saResults[kw] && saResults[kw].searchVolume > 10) {
+          const sa = saResults[kw];
+          const dl = datalabResults[kw] || { trendScore: 50, trendDirection: '유지' as Trend };
+          combined[kw] = {
+            ...sa,
+            ...dl,
+            source: 'naver'
+          };
+        } else {
+          missingKeywords.push(kw);
+        }
       }
-      return combined;
     } catch (err) {
       console.warn('[datasource] Naver API fetch failed, falling back to LLM', err);
+      missingKeywords = [...keywords];
     }
+  } else {
+    missingKeywords = [...keywords];
   }
 
+  if (missingKeywords.length === 0) {
+    return combined;
+  }
+
+  let llmEstimated: Record<string, KeywordMetrics> = {};
+  
   if (claudeApiKey) {
     try {
-      const result = await callClaudeForMetrics(keywords, claudeApiKey);
-      const extended: Record<string, ExtendedKeywordMetrics> = {};
-      for (const kw of Object.keys(result)) {
-        extended[kw] = { ...result[kw], source: 'estimated' };
-      }
-      return extended;
+      llmEstimated = await callClaudeForMetrics(missingKeywords, claudeApiKey);
     } catch (err) {
       console.warn(`[datasource] Claude 실패:`, err);
     }
   }
 
-  if (geminiApiKey) {
+  if (Object.keys(llmEstimated).length === 0 && geminiApiKey) {
     try {
-      const result = await callGeminiForMetrics(keywords, geminiApiKey);
-      const extended: Record<string, ExtendedKeywordMetrics> = {};
-      for (const kw of Object.keys(result)) {
-        extended[kw] = { ...result[kw], source: 'estimated' };
-      }
-      return extended;
+      llmEstimated = await callGeminiForMetrics(missingKeywords, geminiApiKey);
     } catch (err) {
       console.warn(`[datasource] Gemini 실패:`, err);
-      throw err;
     }
   }
-  
-  throw new Error('API 키가 없습니다.');
+
+  for (const kw of missingKeywords) {
+    const est = llmEstimated[kw] || { 
+      searchVolume: 10, 
+      searchVolumePc: 5, 
+      searchVolumeMobile: 5, 
+      competition: '보통', 
+      trendScore: 50, 
+      trendDirection: '유지' 
+    };
+    combined[kw] = { ...est, source: 'estimated' };
+  }
+
+  return combined;
 }

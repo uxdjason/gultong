@@ -5,19 +5,23 @@ import { useWorkspaceStore, FEATURE_META } from '@/stores/workspace';
 
 interface InputAreaProps {
   onSubmit?: (value: string) => void;
+  isWorking?: boolean;
+  onStop?: () => void;
 }
 
-export default function InputArea({ onSubmit }: InputAreaProps) {
+export default function InputArea({ onSubmit, isWorking, onStop }: InputAreaProps) {
   const { selectedFeature, inputValue, setInputValue } = useWorkspaceStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const isDisabled = !selectedFeature;
-  const placeholder = '분석할 시드 키워드를 입력해 주세요.';
+  const placeholder = isWorking 
+    ? '분석 중입니다. 잠시 기다려주세요.' 
+    : '분석할 시드 키워드를 입력해 주세요.';
 
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const submit = useCallback(() => {
-    if (isDisabled) return;
+    if (isDisabled || isWorking) return;
     const val = inputValue.trim();
     
     if (!val) {
@@ -34,7 +38,7 @@ export default function InputArea({ onSubmit }: InputAreaProps) {
     if (onSubmit) {
       onSubmit(val);
     }
-  }, [inputValue, onSubmit, isDisabled]);
+  }, [inputValue, onSubmit, isDisabled, isWorking]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -57,7 +61,7 @@ export default function InputArea({ onSubmit }: InputAreaProps) {
             if (validationError) setValidationError(null);
           }}
           onKeyDown={handleKeyDown}
-          disabled={isDisabled}
+          disabled={isDisabled || isWorking}
           placeholder={placeholder}
           rows={3}
           className="workspace-input p-4 pr-14 font-myungjo text-16"
@@ -73,20 +77,32 @@ export default function InputArea({ onSubmit }: InputAreaProps) {
           aria-label="글 작업 입력"
         />
 
-        <button
-          onClick={(e) => { e.preventDefault(); submit(); }}
-          disabled={isDisabled || !inputValue.trim()}
-          className={`absolute right-4 bottom-4 w-8 h-8 rounded flex items-center justify-center transition-colors ${
-            !isDisabled && inputValue.trim() 
-              ? 'bg-brand-ink text-white hover:bg-brand-ink/90' 
-              : 'bg-surface-divider/20 text-text-tertiary cursor-not-allowed'
-          }`}
-          aria-label="제출"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor">
-            <path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"/>
-          </svg>
-        </button>
+        {isWorking ? (
+          <button
+            onClick={(e) => { e.preventDefault(); onStop?.(); }}
+            className="absolute right-4 bottom-4 w-8 h-8 rounded flex items-center justify-center transition-colors bg-state-danger text-white hover:bg-state-danger/90"
+            aria-label="중지"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 0 24 24" width="16" fill="currentColor">
+              <path d="M6 6h12v12H6z"/>
+            </svg>
+          </button>
+        ) : (
+          <button
+            onClick={(e) => { e.preventDefault(); submit(); }}
+            disabled={isDisabled || !inputValue.trim()}
+            className={`absolute right-4 bottom-4 w-8 h-8 rounded flex items-center justify-center transition-colors ${
+              !isDisabled && inputValue.trim() 
+                ? 'bg-brand-ink text-white hover:bg-brand-ink/90' 
+                : 'bg-surface-divider/20 text-text-tertiary cursor-not-allowed'
+            }`}
+            aria-label="제출"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor">
+              <path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"/>
+            </svg>
+          </button>
+        )}
       </div>
       {validationError && (
         <div className="text-14 text-state-danger font-myungjo pl-2">

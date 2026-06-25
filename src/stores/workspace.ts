@@ -38,7 +38,7 @@ export const FEATURE_META: Record<FeatureId, { label: string; placeholder: strin
 };
 
 // 스트림 블록 타입 (§4.7 세로 스크롤 모델)
-export type BlockType = 'input' | 'chipgroup' | 'result' | 'loading' | 'error';
+export type BlockType = 'input' | 'chipgroup' | 'result' | 'loading' | 'error' | 'aborted';
 
 export interface StreamBlock {
   id: string;

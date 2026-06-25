@@ -32,43 +32,45 @@ export async function POST(req: NextRequest) {
     // 2. Data-Driven 선(先) 데이터 확보 로직 (Naver API)
     let candidatesText = '';
     let preFetchedMetrics: Record<string, any> = {};
-    
+
     if (naverSaCustomerId && naverSaAccessLicence && naverSaSecretKey && naverClientId && naverClientSecret) {
       try {
         const { fetchNaverSaMetrics, fetchNaverDatalabTrend } = await import('@/lib/keyword/datasource');
         const saResults = await fetchNaverSaMetrics([seed], naverSaCustomerId, naverSaAccessLicence, naverSaSecretKey);
-        
+
         // 시드 키워드 제외하고 후보군 추출
         const relatedKeys = Object.keys(saResults).filter(k => k !== seed);
-        
+
         // 임시 스코어링으로 Top 20 추출 (trend=50 가정)
         const scoredCandidates = relatedKeys.map(kw => {
           const m = saResults[kw];
           const tempScore = calculateWritability({ ...m, trendDirection: '유지', trendScore: 50, intent: 'info' });
           return { kw, m, tempScore };
         });
-        
+
         // 점수 높은 순 정렬, 상위 20개 추출
         scoredCandidates.sort((a, b) => b.tempScore - a.tempScore);
         const top20 = scoredCandidates.slice(0, 20).map(c => c.kw);
-        
+
         // Top 20 + seed 에 대해 트렌드 데이터 조회
         const keywordsToFetchTrend = [seed, ...top20];
         const datalabResults = await fetchNaverDatalabTrend(keywordsToFetchTrend, naverClientId, naverClientSecret);
-        
+
         // preFetchedMetrics 조립
         for (const kw of keywordsToFetchTrend) {
-          const sa = saResults[kw] || { searchVolume: 10, searchVolumePc: 5, searchVolumeMobile: 5, competition: '보통' };
-          const dl = datalabResults[kw] || { trendScore: 50, trendDirection: '유지' };
-          preFetchedMetrics[kw] = { ...sa, ...dl, source: 'naver' };
+          if (saResults[kw] && saResults[kw].searchVolume > 10) {
+            const sa = saResults[kw];
+            const dl = datalabResults[kw] || { trendScore: 50, trendDirection: '유지' };
+            preFetchedMetrics[kw] = { ...sa, ...dl, source: 'naver' };
+          }
         }
-        
+
         // LLM에게 전달할 candidatesText 생성
         candidatesText = top20.map(kw => {
-           const m = preFetchedMetrics[kw];
-           return `- ${kw} (검색량: ${m.searchVolume}, 경쟁도: ${m.competition})`;
+          const m = preFetchedMetrics[kw] || { searchVolume: 10, competition: '보통', trendScore: 50, trendDirection: '유지' };
+          return `- ${kw} (검색량: ${m.searchVolume}, 경쟁도: ${m.competition})`;
         }).join('\n');
-        
+
       } catch (err) {
         console.warn('[route] Data-driven pre-fetch failed:', err);
       }
@@ -97,9 +99,9 @@ export async function POST(req: NextRequest) {
     // 5. 스코어링 및 결과 조합
     const createKeywordScore = (kw: string, intent: Intent): KeywordScore => {
       const m = preFetchedMetrics[kw] || {
-        searchVolume: 1000,
-        searchVolumePc: 300,
-        searchVolumeMobile: 700,
+        searchVolume: 10,
+        searchVolumePc: 5,
+        searchVolumeMobile: 5,
         competition: '보통',
         trendDirection: '유지',
         trendScore: 50,
@@ -132,10 +134,15 @@ export async function POST(req: NextRequest) {
       };
     };
 
-    const primaryScore = createKeywordScore(seed, 'info'); // Seed는 기본 info로 잡되 aiInsight로 커버
-    
+    const primaryScore = createKeywordScore(seed, expansion.result.seedIntent || 'info');
+
+    if (primaryScore.source === 'estimated') {
+      const estimatedWarning = `\n\n💡 수익화 전략: 이 키워드는 광고 입찰 데이터가 제공되지 않아 AI가 화제성을 바탕으로 유추한 추정치입니다. 이러한 정보/이슈성 키워드는 개별 클릭 단가(CPC)는 낮을 수 있으나, 충분한 검색 트래픽이 발생하는 키워드라면 방문자 수 기반의 수익 전략에는 알맞을 수 있습니다.`;
+      primaryScore.aiInsight += estimatedWarning;
+    }
+
     if (primaryScore.writabilityScore < 50) {
-      const warningText = ` 다만, 현재 분석 결과 이 키워드의 종합 글쓰기 점수는 ${primaryScore.writabilityScore}점으로 다소 낮게 평가되었습니다. 검색량이 부족하거나 경쟁이 치열할 수 있으므로, 단독 키워드보다는 점수가 높은 세부 연관 키워드를 함께 활용하는 전략을 권장합니다.`;
+      const warningText = `\n\n💡 팁: 현재 분석 결과 이 키워드의 종합 글쓰기 점수는 ${primaryScore.writabilityScore}점으로 다소 낮게 평가되었습니다. 검색량이 부족하거나 경쟁이 치열할 수 있으므로, 단독 키워드보다는 아래 추천되는 연관 키워드를 함께 활용하는 전략을 권장합니다.`;
       primaryScore.aiInsight += warningText;
     }
 

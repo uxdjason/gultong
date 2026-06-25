@@ -45,19 +45,19 @@ export default function WriteWithKeywordMenu({ keyword, variant = 'primary' }: P
           <div className="py-1">
             <button
               onClick={() => handleSelect('blog')}
-              className="w-full text-left px-4 py-2 text-14 text-text-primary hover:bg-surface-main transition-colors"
+              className="w-full text-left pl-6 pr-4 py-2 text-14 text-text-primary hover:bg-surface-main transition-colors"
             >
               수익형 블로그
             </button>
             <button
               onClick={() => handleSelect('affiliate')}
-              className="w-full text-left px-4 py-2 text-14 text-text-primary hover:bg-surface-main transition-colors"
+              className="w-full text-left pl-6 pr-4 py-2 text-14 text-text-primary hover:bg-surface-main transition-colors"
             >
               제휴 마케팅 · 체험단
             </button>
             <button
               onClick={() => handleSelect('product')}
-              className="w-full text-left px-4 py-2 text-14 text-text-primary hover:bg-surface-main transition-colors"
+              className="w-full text-left pl-6 pr-4 py-2 text-14 text-text-primary hover:bg-surface-main transition-colors"
             >
               제품 상세페이지
             </button>

@@ -36,6 +36,14 @@ function renderStreamBlock(block: StreamBlock) {
     );
   }
 
+  if (block.type === 'aborted') {
+    return (
+      <div className="w-full bg-surface-card rounded-lg p-6 shadow-card border border-surface-divider/20 flex flex-col gap-2">
+        <span className="font-myungjo text-text-primary text-16 whitespace-pre-wrap">{block.content}</span>
+      </div>
+    );
+  }
+
   // fallback for generic or text
   return (
     <div className="w-full bg-surface-card rounded-lg p-6 shadow-card border border-surface-divider/20">
@@ -50,12 +58,21 @@ export default function WorkspaceStream() {
   const { selectedFeature, streamBlocks, addStreamBlock, setInputValue, inputValue } = useWorkspaceStore();
   const streamEndRef = useRef<HTMLDivElement>(null);
   const [turn, setTurn] = useState(1);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const [isWorking, setIsWorking] = useState(false);
 
   useEffect(() => {
     if (streamBlocks.length > 0) {
       streamEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [streamBlocks]);
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  };
 
   const handleSubmit = async (value: string) => {
     if (!selectedFeature) return;
@@ -79,12 +96,17 @@ export default function WorkspaceStream() {
         turn
       };
       addStreamBlock(loadingBlock);
+      
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+      setIsWorking(true);
 
       try {
         const res = await fetch('/api/keywords/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ seedKeyword: value })
+          body: JSON.stringify({ seedKeyword: value }),
+          signal: abortController.signal
         });
 
         const data = await res.json();
@@ -106,19 +128,33 @@ export default function WorkspaceStream() {
         };
         addStreamBlock(resultBlock);
 
-      } catch (err) {
+      } catch (err: any) {
         useWorkspaceStore.setState(state => ({
           streamBlocks: state.streamBlocks.filter(b => b.id !== loadingId)
         }));
         
-        const errorBlock: StreamBlock = {
-          id: Date.now().toString() + '-error',
-          type: 'error',
-          featureId: selectedFeature,
-          content: err instanceof Error ? err.message : '분석 중 오류가 발생했습니다.',
-          turn
-        };
-        addStreamBlock(errorBlock);
+        if (err.name === 'AbortError') {
+          const abortedBlock: StreamBlock = {
+            id: Date.now().toString() + '-aborted',
+            type: 'aborted',
+            featureId: selectedFeature,
+            content: '작업이 중단되었습니다.',
+            turn
+          };
+          addStreamBlock(abortedBlock);
+        } else {
+          const errorBlock: StreamBlock = {
+            id: Date.now().toString() + '-error',
+            type: 'error',
+            featureId: selectedFeature,
+            content: err instanceof Error ? err.message : '분석 중 오류가 발생했습니다.',
+            turn
+          };
+          addStreamBlock(errorBlock);
+        }
+      } finally {
+        setIsWorking(false);
+        abortControllerRef.current = null;
       }
     }
 
@@ -136,7 +172,7 @@ export default function WorkspaceStream() {
             <FeatureMenuChip inline />
           </div>
           <div className="w-full max-w-[840px] mx-auto">
-            <InputArea onSubmit={handleSubmit} />
+            <InputArea onSubmit={handleSubmit} isWorking={isWorking} onStop={handleStop} />
           </div>
         </div>
       ) : (
@@ -145,7 +181,7 @@ export default function WorkspaceStream() {
             <div className="max-w-[840px] mx-auto w-full flex flex-col gap-6">
               {streamBlocks.map((block, index) => {
                 const isLastInTurn = index === streamBlocks.length - 1 || streamBlocks[index + 1].turn !== block.turn;
-                const isFinalState = block.type === 'result' || block.type === 'error';
+                const isFinalState = block.type === 'result' || block.type === 'error' || block.type === 'aborted';
                 const ts = parseInt(block.id.split('-')[0]);
                 const timestamp = new Date(ts || Date.now()).toLocaleString('ko-KR', { 
                   month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
@@ -172,7 +208,7 @@ export default function WorkspaceStream() {
 
           <div className="absolute bottom-0 left-0 w-full p-4 sm:p-6 md:p-8 bg-surface-main shadow-[0_-10px_20px_rgba(249,249,251,0.9)]">
             <div className="max-w-[840px] mx-auto">
-              <InputArea onSubmit={handleSubmit} />
+              <InputArea onSubmit={handleSubmit} isWorking={isWorking} onStop={handleStop} />
             </div>
           </div>
         </div>
