@@ -137,12 +137,12 @@ export async function POST(req: NextRequest) {
     const primaryScore = createKeywordScore(seed, expansion.result.seedIntent || 'info');
 
     if (primaryScore.source === 'estimated') {
-      const estimatedWarning = `\n\n💡 수익화 전략: 이 키워드는 광고 입찰 데이터가 제공되지 않아 AI가 화제성을 바탕으로 유추한 추정치입니다. 이러한 정보/이슈성 키워드는 개별 클릭 단가(CPC)는 낮을 수 있으나, 충분한 검색 트래픽이 발생하는 키워드라면 방문자 수 기반의 수익 전략에는 알맞을 수 있습니다.`;
+      const estimatedWarning = `\n\n📌 수익화 전략: 이 키워드는 광고 입찰 데이터가 제공되지 않아 AI가 화제성을 바탕으로 유추한 추정치입니다. 이러한 정보/이슈성 키워드는 개별 클릭 단가(CPC)는 낮을 수 있으나, 충분한 검색 트래픽이 발생하는 키워드라면 방문자 수 기반의 수익 전략에는 알맞을 수 있습니다.`;
       primaryScore.aiInsight += estimatedWarning;
     }
 
     if (primaryScore.writabilityScore < 50) {
-      const warningText = `\n\n💡 팁: 현재 분석 결과 이 키워드의 종합 글쓰기 점수는 ${primaryScore.writabilityScore}점으로 다소 낮게 평가되었습니다. 검색량이 부족하거나 경쟁이 치열할 수 있으므로, 단독 키워드보다는 아래 추천되는 연관 키워드를 함께 활용하는 전략을 권장합니다.`;
+      const warningText = `\n\n📌 팁: 현재 분석 결과 이 키워드의 종합 글쓰기 점수는 ${primaryScore.writabilityScore}점으로 다소 낮게 평가되었습니다. 검색량이 부족하거나 경쟁이 치열할 수 있으므로, 단독 키워드보다는 아래 추천되는 연관 키워드를 함께 활용하는 전략을 권장합니다.`;
       primaryScore.aiInsight += warningText;
     }
 
