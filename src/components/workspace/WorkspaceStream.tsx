@@ -140,8 +140,8 @@ export default function WorkspaceStream() {
           </div>
         </div>
       ) : (
-        <div className="w-full h-full flex flex-col relative">
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 pt-24 pb-48" aria-live="polite">
+        <div className="w-full h-full flex flex-col relative pt-[80px]">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 md:px-8 pb-40 md:pb-48" aria-live="polite">
             <div className="max-w-[840px] mx-auto w-full flex flex-col gap-6">
               {streamBlocks.map((block, index) => {
                 const isLastInTurn = index === streamBlocks.length - 1 || streamBlocks[index + 1].turn !== block.turn;

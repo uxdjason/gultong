@@ -27,13 +27,17 @@ export default function KeywordPrimaryCard({ data }: Props) {
     <div className="bg-surface-card rounded-lg p-6 shadow-card flex flex-col gap-4 font-myungjo relative border border-surface-divider/30">
       {/* Header: Keyword and Badges */}
       <div className="flex justify-between items-start gap-4">
-        <div className="flex flex-col gap-2 flex-1">
+        <div className="flex flex-col gap-2 flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-24 font-bold text-text-primary m-0 leading-none">{data.keyword}</h3>
             {data.badge && <KeywordBadge type={data.badge} />}
           </div>
-          <div className="flex items-center gap-3 text-14 text-text-secondary flex-wrap mt-1">
-            <span>검색량 <strong className="font-semibold text-text-primary">약 {formatNum(data.searchVolume)}</strong> {data.source === 'estimated' && <span className="text-12 text-text-tertiary ml-1">(추정치)</span>}</span>
+          <div className="flex items-center gap-3 text-16 text-text-secondary flex-wrap mt-1">
+            <span>
+              검색량 <strong className="font-semibold text-text-primary">약 {formatNum(data.searchVolume)}</strong> 
+              {data.source === 'estimated' && <span className="text-14 text-text-tertiary ml-1">(추정치)</span>}
+              {data.source === 'naver' && <span className="text-12 text-state-success border border-state-success/30 rounded-full px-2 py-0.5 ml-2 font-normal bg-state-success/5">네이버 기준</span>}
+            </span>
             <span className="text-surface-divider">|</span>
             <span>경쟁도 <strong className={compColor}>{data.competition}</strong></span>
             <span className="text-surface-divider">|</span>
@@ -52,7 +56,7 @@ export default function KeywordPrimaryCard({ data }: Props) {
 
       {/* AI Insight */}
       <div className="bg-surface-main rounded-md p-4 mt-2 border border-surface-divider/20">
-        <p className="text-14 text-text-primary leading-relaxed m-0">
+        <p className="text-[15px] text-text-primary leading-relaxed m-0">
           {data.aiInsight}
         </p>
       </div>

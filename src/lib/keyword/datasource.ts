@@ -1,4 +1,4 @@
-import { Competition, Trend } from './types';
+import { Competition, Trend, KeywordSource } from './types';
 import { fetchWithRetry, parseJSONGeneric } from '@/lib/llm_verdict';
 
 export interface KeywordMetrics {
@@ -6,6 +6,22 @@ export interface KeywordMetrics {
   competition: Competition;
   trendDirection: Trend;
   trendScore: number;
+}
+
+export interface ExtendedKeywordMetrics extends KeywordMetrics {
+  searchVolumePc?: number;
+  searchVolumeMobile?: number;
+  source: KeywordSource;
+}
+
+export interface FetchMetricsOptions {
+  claudeApiKey?: string;
+  geminiApiKey?: string;
+  naverSaCustomerId?: string;
+  naverSaAccessLicence?: string;
+  naverSaSecretKey?: string;
+  naverClientId?: string;
+  naverClientSecret?: string;
 }
 
 const SYSTEM_PROMPT = `당신은 네이버 검색광고 API를 모방하는 데이터 추정기입니다.
@@ -27,7 +43,7 @@ const SYSTEM_PROMPT = `당신은 네이버 검색광고 API를 모방하는 데�
 - 결과는 반드시 위 JSON 형식만 출력해야 합니다.`;
 
 async function callClaudeForMetrics(keywords: string[], apiKey: string): Promise<Record<string, KeywordMetrics>> {
-  const model = 'claude-haiku-4-5-20251001';
+  const model = 'claude-sonnet-4-6';
   
   const requestBody = {
     model,
@@ -91,26 +107,213 @@ async function callGeminiForMetrics(keywords: string[], apiKey: string): Promise
   return parsed;
 }
 
+async function generateSignature(timestamp: string, method: string, path: string, secretKey: string) {
+  const message = `${timestamp}.${method}.${path}`;
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secretKey),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signatureBuffer = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+  return btoa(String.fromCharCode.apply(null, signatureArray));
+}
+
+export async function fetchNaverSaMetrics(
+  keywords: string[],
+  customerId: string,
+  accessLicence: string,
+  secretKey: string
+): Promise<Record<string, { searchVolume: number, searchVolumePc: number, searchVolumeMobile: number, competition: Competition }>> {
+  const results: Record<string, any> = {};
+  
+  for (let i = 0; i < keywords.length; i += 5) {
+    const chunk = keywords.slice(i, i + 5);
+    const hintKeywords = chunk.map(k => encodeURIComponent(k.replace(/\s+/g, ''))).join(',');
+    const path = '/keywordstool';
+    const method = 'GET';
+    const timestamp = Date.now().toString();
+    const signature = await generateSignature(timestamp, method, path, secretKey);
+    
+    const url = `https://api.naver.com${path}?hintKeywords=${hintKeywords}&showDetail=1`;
+    
+    const response = await fetchWithRetry(url, {
+      method,
+      headers: {
+        'X-Timestamp': timestamp,
+        'X-API-KEY': accessLicence,
+        'X-Customer': customerId,
+        'X-Signature': signature,
+      }
+    });
+
+    if (!response.ok) {
+      console.warn(`[datasource] Naver SA API error: ${response.status}`);
+      throw new Error(`Naver SA API error: ${response.status}`);
+    }
+
+    const data = await response.json() as any;
+    if (data.keywordList && Array.isArray(data.keywordList)) {
+      for (const item of data.keywordList) {
+        const noSpaceKw = item.relKeyword.replace(/\s+/g, '');
+        const originalKw = chunk.find(k => k.replace(/\s+/g, '') === noSpaceKw);
+        const kw = originalKw || item.relKeyword;
+        
+        const parseCnt = (val: string | number) => {
+          if (typeof val === 'string' && val.includes('<')) return 5;
+          return Number(val) || 0;
+        };
+
+        const pc = parseCnt(item.monthlyPcQcCnt);
+        const mobile = parseCnt(item.monthlyMobileQcCnt);
+        const total = pc + mobile;
+        
+        let comp: Competition = '보통';
+        if (item.compIdx === '높음') comp = '높음';
+        else if (item.compIdx === '중간') comp = '보통';
+        else if (item.compIdx === '낮음') comp = '낮음';
+
+        results[kw] = {
+          searchVolume: total,
+          searchVolumePc: pc,
+          searchVolumeMobile: mobile,
+          competition: comp
+        };
+      }
+    }
+  }
+  return results;
+}
+
+export async function fetchNaverDatalabTrend(
+  keywords: string[],
+  clientId: string,
+  clientSecret: string
+): Promise<Record<string, { trendScore: number, trendDirection: Trend }>> {
+  const results: Record<string, { trendScore: number, trendDirection: Trend }> = {};
+  
+  for (let i = 0; i < keywords.length; i += 5) {
+    const chunk = keywords.slice(i, i + 5);
+    
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 6);
+    
+    const requestBody = {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+      timeUnit: 'month',
+      keywordGroups: chunk.map(kw => ({
+        groupName: kw,
+        keywords: [kw]
+      }))
+    };
+
+    const response = await fetchWithRetry('https://openapi.naver.com/v1/datalab/search', {
+      method: 'POST',
+      headers: {
+        'X-Naver-Client-Id': clientId,
+        'X-Naver-Client-Secret': clientSecret,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      console.warn(`[datasource] Naver DataLab API error: ${response.status}`);
+      throw new Error(`Naver DataLab API error: ${response.status}`);
+    }
+
+    const data = await response.json() as any;
+    if (data.results && Array.isArray(data.results)) {
+      for (const group of data.results) {
+        const kw = group.title;
+        const trendData = group.data || [];
+        
+        let trendScore = 50;
+        let trendDirection: Trend = '유지';
+        
+        if (trendData.length >= 2) {
+          const last = trendData[trendData.length - 1].ratio;
+          const prev = trendData[trendData.length - 2].ratio;
+          
+          if (last > prev * 1.2) {
+            trendDirection = '상승';
+            trendScore = Math.min(100, 50 + (last - prev));
+          } else if (last < prev * 0.8) {
+            trendDirection = '하락';
+            trendScore = Math.max(0, 50 - (prev - last));
+          } else {
+            trendDirection = '유지';
+            trendScore = 50;
+          }
+        }
+        
+        results[kw] = { trendScore: Math.round(trendScore), trendDirection };
+      }
+    }
+  }
+  
+  return results;
+}
+
 export async function fetchMetrics(
   keywords: string[],
-  claudeApiKey?: string,
-  geminiApiKey?: string
-): Promise<Record<string, KeywordMetrics>> {
+  options: FetchMetricsOptions
+): Promise<Record<string, ExtendedKeywordMetrics>> {
   if (keywords.length === 0) return {};
 
-  let lastError: Error | null = null;
+  const {
+    claudeApiKey, geminiApiKey,
+    naverSaCustomerId, naverSaAccessLicence, naverSaSecretKey,
+    naverClientId, naverClientSecret
+  } = options;
+
+  if (naverSaCustomerId && naverSaAccessLicence && naverSaSecretKey && naverClientId && naverClientSecret) {
+    try {
+      const saResults = await fetchNaverSaMetrics(keywords, naverSaCustomerId, naverSaAccessLicence, naverSaSecretKey);
+      const datalabResults = await fetchNaverDatalabTrend(keywords, naverClientId, naverClientSecret);
+      
+      const combined: Record<string, ExtendedKeywordMetrics> = {};
+      for (const kw of keywords) {
+        const sa = saResults[kw] || { searchVolume: 10, searchVolumePc: 5, searchVolumeMobile: 5, competition: '보통' as Competition };
+        const dl = datalabResults[kw] || { trendScore: 50, trendDirection: '유지' as Trend };
+        combined[kw] = {
+          ...sa,
+          ...dl,
+          source: 'naver'
+        };
+      }
+      return combined;
+    } catch (err) {
+      console.warn('[datasource] Naver API fetch failed, falling back to LLM', err);
+    }
+  }
+
   if (claudeApiKey) {
     try {
-      return await callClaudeForMetrics(keywords, claudeApiKey);
+      const result = await callClaudeForMetrics(keywords, claudeApiKey);
+      const extended: Record<string, ExtendedKeywordMetrics> = {};
+      for (const kw of Object.keys(result)) {
+        extended[kw] = { ...result[kw], source: 'estimated' };
+      }
+      return extended;
     } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      console.warn(`[datasource] Claude 실패: ${lastError.message}`);
+      console.warn(`[datasource] Claude 실패:`, err);
     }
   }
 
   if (geminiApiKey) {
     try {
-      return await callGeminiForMetrics(keywords, geminiApiKey);
+      const result = await callGeminiForMetrics(keywords, geminiApiKey);
+      const extended: Record<string, ExtendedKeywordMetrics> = {};
+      for (const kw of Object.keys(result)) {
+        extended[kw] = { ...result[kw], source: 'estimated' };
+      }
+      return extended;
     } catch (err) {
       console.warn(`[datasource] Gemini 실패:`, err);
       throw err;

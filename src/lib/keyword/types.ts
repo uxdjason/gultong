@@ -2,7 +2,7 @@ export type Intent = 'info' | 'commercial' | 'transactional';
 export type Competition = '낮음' | '보통' | '높음';
 export type Trend = '상승' | '유지' | '하락';
 export type Badge = '급상승' | '블루오션' | '계절성' | null;
-export type KeywordSource = 'cache' | 'fresh' | 'estimated';
+export type KeywordSource = 'cache' | 'fresh' | 'estimated' | 'naver';
 
 export interface KeywordScore {
   keyword: string;

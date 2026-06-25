@@ -27,7 +27,7 @@ const config: Config = {
         },
         state: {
           success: '#0A7C3A',
-          warning: '#B8730A',
+          warning: '#F59E0B',
           danger: '#B23A3A',
           info: '#2C5BB8',
         },

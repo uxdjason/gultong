@@ -9,32 +9,42 @@ export interface KeywordExpansionResult {
   }>;
 }
 
-const SYSTEM_PROMPT = `당신은 SEO 및 블로그 키워드 분석 전문가입니다.
+const getSystemPrompt = (candidatesText: string) => `당신은 SEO 및 블로그 키워드 분석 전문가입니다.
 사용자가 입력한 시드 키워드에 대해 다음 2가지를 분석하여 JSON으로 반환하세요.
 
 1. aiInsight: 이 키워드로 수익형 블로그나 체험단 글을 쓸 때의 전략적 조언과 가능성을 3문장으로 작성하세요. 
-   - 반드시 키워드의 정확한 대중적/사전적 의미(예: '비비빅'은 아이스크림)를 파악하고, 절대 없는 사실을 지어내지 마세요(Hallucination 금지).
+   - 반드시 키워드의 정확한 대중적/사전적 의미를 파악하세요. 특히 키워드가 최근 유행하는 대중문화(노래 제목, 걸그룹/아이돌 등), 신조어, 줄임말(예: 랜플=랜덤플레이댄스)일 가능성을 최우선으로 고려하세요.
+   - 고유명사(특정 상호명, 지명, 식당, 지역 명소, '녹두거리' 같은 로컬 상권 명칭 등)의 경우 이름만 보고 위치나 업종을 절대 지레짐작하지 마세요. (예: '성미당'은 빵집이 아니라 전주 비빔밥 맛집이며, '녹두거리'는 대전이 아니라 서울대 인근 대학동입니다.) 자신의 지식에 확신이 없다면 구체적인 지역명이나 업종을 단정지어 설명하지 말고, 범용적인 표현을 사용하세요(Hallucination 절대 금지).
+   - 일반 명사나 부사(예: "갑자기")로 보이더라도 실제로는 유명한 곡명이나 트렌드일 수 있으므로 문맥을 주의 깊게 판단하세요.
    - 무조건 수익창출에 유리하다고만 하지 말고, 대표 키워드라서 경쟁이 치열할 것으로 예상된다면 "세부/연관 키워드를 공략하라"는 식의 현실적이고 객관적인 조언을 포함하세요.
    - 반드시 모든 문장은 '-입니다.', '-합니다.' 와 같이 정중한 경어체로 끝맺으세요. '-다.'와 같은 평어체는 절대 사용하지 마세요.
-2. related: 연관 키워드를 8개 추출하고, 각 키워드의 검색 의도(intent)를 'info', 'commercial', 'transactional' 중 하나로 분류하세요.
-   - info: 단순 정보 탐색 (예: 캠핑장 추천, 텐트 치는 법)
-   - commercial: 구매 전 정보 탐색 (예: 텐트 브랜드, 가성비 텐트)
-   - transactional: 직접적인 구매/행동 의도 (예: 텐트 가격, 텐트 렌탈)
+${candidatesText && candidatesText.trim() !== '' ? 
+`2. related: 아래 제공된 [데이터 기반 검증된 연관 키워드 후보군] 목록에서, 블로그 유입에 가장 적합한 키워드를 **정확히 8개만 중복 없이 선택**하고, 각각의 검색 의도(intent)를 'info', 'commercial', 'transactional' 중 하나로 분류하세요.
+   - 반드시 제공된 후보군 목록 안에 있는 단어만 사용해야 합니다. 절대 임의의 단어를 지어내지 마세요.
+   - 검색량이 너무 낮거나 경쟁이 심한 것보다는 블로거가 쓰기 좋은 '중소형 황금 키워드' 위주로 선별하세요.
 
-반드시 아래 JSON 형식으로만 응답하세요. 다른 설명 텍스트는 절대 포함하지 마세요:
+[데이터 기반 검증된 연관 키워드 후보군]
+${candidatesText}` 
+: 
+`2. related: 연관 키워드를 **정확히 중복 없이 8개 추출**하고, 각 키워드의 검색 의도(intent)를 'info', 'commercial', 'transactional' 중 하나로 분류하세요.
+   - 단순히 시드 키워드에 단어를 덧붙인 1차원적인 연관어를 피하세요. 월 검색량이 거의 없는 지나치게 길고 지엽적인 문장형 키워드는 절대 피하세요.
+   - 대신 어느 정도 대중적인 수요가 보장되면서도 메인 키워드보다 경쟁이 덜한 '중소형 황금 키워드(Middle-tail)'를 당신의 지식을 바탕으로 제안해야 합니다.`}
+
+반드시 아래 JSON 형식으로만 응답하세요:
 {
   "aiInsight": "[3문장의 조언]",
   "related": [
-    { "keyword": "연관키워드1", "intent": "info" },
-    { "keyword": "연관키워드2", "intent": "commercial" }
+    { "keyword": "후보군에있는단어1", "intent": "info" },
+    { "keyword": "후보군에있는단어2", "intent": "commercial" }
   ]
 }`;
 
 export async function callClaudeForExpansion(
   seedKeyword: string,
+  candidatesText: string,
   apiKey: string
 ): Promise<KeywordExpansionResult> {
-  const model = 'claude-haiku-4-5-20251001';
+  const model = 'claude-sonnet-4-6';
 
   console.log(`[keyword] Claude 호출 (expander): ${model}`);
 
@@ -42,7 +52,7 @@ export async function callClaudeForExpansion(
     model,
     max_tokens: 1024,
     temperature: 0.2,
-    system: SYSTEM_PROMPT,
+    system: getSystemPrompt(candidatesText),
     messages: [
       {
         role: 'user',
@@ -81,6 +91,7 @@ export async function callClaudeForExpansion(
 
 export async function callGeminiForExpansion(
   seedKeyword: string,
+  candidatesText: string,
   apiKey: string
 ): Promise<KeywordExpansionResult> {
   const model = 'gemini-2.5-flash';
@@ -90,7 +101,7 @@ export async function callGeminiForExpansion(
   const requestBody = {
     contents: [{
       parts: [{
-        text: `${SYSTEM_PROMPT}\n\n시드 키워드: "${seedKeyword}"`
+        text: `${getSystemPrompt(candidatesText)}\n\n시드 키워드: "${seedKeyword}"`
       }]
     }],
     generationConfig: {
@@ -148,6 +159,7 @@ export async function callGeminiForExpansion(
 
 export async function expandKeyword(
   seedKeyword: string,
+  candidatesText: string,
   claudeApiKey?: string,
   geminiApiKey?: string
 ): Promise<{ result: KeywordExpansionResult; provider: 'claude' | 'gemini' }> {
@@ -155,7 +167,7 @@ export async function expandKeyword(
 
   if (claudeApiKey) {
     try {
-      const result = await callClaudeForExpansion(seedKeyword, claudeApiKey);
+      const result = await callClaudeForExpansion(seedKeyword, candidatesText, claudeApiKey);
       return { result, provider: 'claude' };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
@@ -166,7 +178,7 @@ export async function expandKeyword(
   }
 
   if (geminiApiKey) {
-    const result = await callGeminiForExpansion(seedKeyword, geminiApiKey);
+    const result = await callGeminiForExpansion(seedKeyword, candidatesText, geminiApiKey);
     return { result, provider: 'gemini' };
   }
 

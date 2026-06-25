@@ -41,7 +41,7 @@ export default function WorkspaceShell({
         onPersona={() => {}}
         onSettingsClick={() => {}}
       />
-      <div className="main">
+      <div className="main flex-1 min-w-0">
         <TopBar
           creditBalance={creditBalance}
           onChargeClick={() => {}}

@@ -29,7 +29,7 @@ export default function WriteWithKeywordMenu({ keyword, variant = 'primary' }: P
 
   const buttonClass = variant === 'primary'
     ? "bg-brand-ink text-text-inverse hover:bg-brand-ink/90 shadow-sm"
-    : "bg-transparent text-brand-ink hover:bg-brand-paper/50";
+    : "bg-transparent text-text-secondary hover:bg-brand-paper/50 hover:text-brand-ink";
 
   return (
     <div className="relative inline-block text-left" ref={menuRef}>

@@ -14,8 +14,11 @@ export function calculateWritability(d: Omit<ScorerInput, 'documentVolume' | 'is
   let s = 0;
   // 1) 검색량 sweet spot: 월 1만~5만이 최적 (40점)
   if (d.searchVolume >= 10000 && d.searchVolume <= 50000) s += 40;
-  else if (d.searchVolume >= 5000) s += 25;
-  else if (d.searchVolume >= 1000) s += 15;
+  else if (d.searchVolume > 50000) s += 35;
+  else if (d.searchVolume >= 1000) s += 35;
+  else if (d.searchVolume >= 500) s += 25;
+  else if (d.searchVolume >= 100) s += 15;
+  else s += 5;
 
   // 2) 경쟁도 (30점)
   s += d.competition === '낮음' ? 30 : d.competition === '보통' ? 18 : 5;

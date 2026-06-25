@@ -116,5 +116,5 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   setPrefillKeyword: (keyword) => set({ prefillKeyword: keyword }),
 
   startFeatureWithKeyword: (featureId, keyword) =>
-    set({ selectedFeature: featureId, prefillKeyword: keyword, inputValue: '' }),
+    set({ selectedFeature: featureId, prefillKeyword: keyword, inputValue: keyword }),
 }));
